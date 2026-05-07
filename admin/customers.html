@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customers — SBS Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../static/css/admin-shared.css">
+<style>
+  .summary-strip { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 24px; }
+  .summary-card { background:#fff; border:1px solid #E8ECF0; border-radius:12px; padding:18px 20px; }
+  .summary-label { font-size:12px; color:#8A93A0; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px; }
+  .summary-value { font-size:24px; font-weight:600; color:#1A1A2E; }
+  .summary-sub { font-size:12px; color:#8A93A0; margin-top:3px; }
+  .avatar-circle { width:34px; height:34px; border-radius:50%; background:var(--brand-light); color:var(--brand-dark); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; flex-shrink:0; }
+  .customer-cell { display:flex; align-items:center; gap:10px; }
+  /* Detail panel */
+  .detail-overlay { display:none; position:fixed; inset:0; background:rgba(10,20,30,0.45); z-index:200; justify-content:flex-end; }
+  .detail-overlay.open { display:flex; }
+  .detail-panel { width:420px; background:#fff; height:100vh; overflow-y:auto; display:flex; flex-direction:column; }
+  .detail-header { padding:20px 24px; border-bottom:1px solid #F0F3F6; display:flex; align-items:center; gap:14px; position:sticky; top:0; background:#fff; z-index:10; }
+  .detail-avatar { width:46px; height:46px; border-radius:50%; background:var(--brand-light); color:var(--brand-dark); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600; flex-shrink:0; }
+  .detail-name { font-size:15px; font-weight:600; color:#1A1A2E; }
+  .detail-email { font-size:12px; color:#8A93A0; margin-top:2px; }
+  .detail-close { margin-left:auto; width:30px; height:30px; border-radius:6px; border:1px solid #E0E5EB; background:transparent; cursor:pointer; font-size:18px; color:#7A8491; display:flex; align-items:center; justify-content:center; }
+  .detail-close:hover { background:#F4F6F8; }
+  .detail-body { padding:20px 24px; flex:1; }
+  .detail-section { margin-bottom:24px; }
+  .detail-section-title { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:#8A93A0; margin-bottom:10px; }
+  .detail-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid #F4F6F8; }
+  .detail-row:last-child { border-bottom:none; }
+  .detail-key { font-size:13px; color:#7A8491; }
+  .detail-val { font-size:13px; font-weight:500; color:#1A1A2E; }
+  .order-mini { padding:10px 0; border-bottom:1px solid #F4F6F8; }
+  .order-mini:last-child { border-bottom:none; }
+  .order-mini-top { display:flex; justify-content:space-between; align-items:center; }
+  .order-mini-inv { font-family:monospace; font-size:12px; font-weight:600; color:#1A1A2E; }
+  .order-mini-date { font-size:11.5px; color:#9AA3AF; margin-top:3px; }
+
+  /* BULK ACTION BAR */
+  .bulk-bar { display:none; align-items:center; gap:10px; padding:10px 16px; background:#FEF9E7; border:1px solid #F5C518; border-radius:10px; margin-bottom:12px; }
+  .bulk-bar.visible { display:flex; }
+  .bulk-count { font-size:13px; font-weight:500; color:#1A1A2E; flex:1; }
+  .bulk-delete-btn { display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 14px; border-radius:7px; font-size:12.5px; font-weight:500; font-family:var(--font); cursor:pointer; background:#FEF0F0; color:#C0291F; border:1px solid #FBBCBC; transition:all 0.15s; }
+  .bulk-delete-btn:hover { background:#FDDCDC; }
+  .bulk-delete-btn svg { width:13px; height:13px; }
+  .bulk-clear-btn { display:inline-flex; align-items:center; height:32px; padding:0 12px; border-radius:7px; font-size:12.5px; font-family:var(--font); cursor:pointer; background:transparent; color:#5A6473; border:1px solid #E0E5EB; transition:all 0.15s; }
+  .bulk-clear-btn:hover { background:#F4F6F8; }
+  /* CHECKBOX */
+  .row-cb { width:16px; height:16px; accent-color:var(--brand); cursor:pointer; flex-shrink:0; }
+  .select-all-cb { width:16px; height:16px; accent-color:var(--brand); cursor:pointer; }
+
+</style>
+</head>
+<body>
+<div id="sidebar-mount"></div>
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">Customers</div>
+    <div class="topbar-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Search name, email or phone..." oninput="renderTable()">
+    </div>
+    <button class="btn btn-ghost" onclick="exportCSV()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export
+    </button>
+  </div>
+  <div class="page">
+    <div class="summary-strip">
+      <div class="summary-card">
+        <div class="summary-label">Total customers</div>
+        <div class="summary-value" id="s-total">0</div>
+        <div class="summary-sub">registered accounts</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">With orders</div>
+        <div class="summary-value" id="s-with-orders">0</div>
+        <div class="summary-sub">have placed at least 1 order</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Total spent</div>
+        <div class="summary-value" id="s-revenue">KES 0</div>
+        <div class="summary-sub">across all customers</div>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <select class="filter-select" id="sortFilter" onchange="renderTable()">
+        <option value="newest">Newest first</option>
+        <option value="name">Name A–Z</option>
+        <option value="orders">Most orders</option>
+        <option value="spent">Highest spend</option>
+      </select>
+      <div class="filter-spacer"></div>
+      <span class="results-count" id="resultsCount">0 customers</span>
+    </div>
+
+    <div class="bulk-bar" id="bulkBar">
+      <span class="bulk-count" id="bulkCount">0 selected</span>
+      <button class="bulk-delete-btn" onclick="bulkDelete()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+        Delete selected
+      </button>
+      <button class="bulk-clear-btn" onclick="clearSelection()">Deselect all</button>
+    </div>
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40px;"><input type="checkbox" class="select-all-cb" id="selectAll" onchange="toggleSelectAll(this)"></th>
+          <th style="width:260px;">Customer</th>
+            <th style="width:160px;">Phone</th>
+            <th style="width:100px;" class="t-right">Orders</th>
+            <th style="width:150px;" class="t-right">Total spent</th>
+            <th style="width:120px;">Joined</th>
+            <th style="width:80px;" class="t-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="customersBody"></tbody>
+      </table>
+      <div class="pagination" id="pagination" style="display:none;">
+        <span class="page-info" id="pageInfo"></span>
+        <div class="page-btns" id="pageBtns"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="detail-overlay" id="detailOverlay">
+  <div class="detail-panel">
+    <div class="detail-header">
+      <div class="detail-avatar" id="d-avatar"></div>
+      <div><div class="detail-name" id="d-name"></div><div class="detail-email" id="d-email"></div></div>
+      <button class="detail-close" onclick="closeDetail()">&#x2715;</button>
+    </div>
+    <div class="detail-body">
+      <div class="detail-section">
+        <div class="detail-section-title">Contact info</div>
+        <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val" id="d-email2"></span></div>
+        <div class="detail-row"><span class="detail-key">Phone</span><span class="detail-val" id="d-phone"></span></div>
+        <div class="detail-row"><span class="detail-key">Address</span><span class="detail-val" id="d-address"></span></div>
+        <div class="detail-row"><span class="detail-key">Member since</span><span class="detail-val" id="d-joined"></span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Order summary</div>
+        <div class="detail-row"><span class="detail-key">Total orders</span><span class="detail-val" id="d-orders"></span></div>
+        <div class="detail-row"><span class="detail-key">Total spent</span><span class="detail-val" id="d-spent"></span></div>
+        <div class="detail-row"><span class="detail-key">Last order</span><span class="detail-val" id="d-last"></span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Order history</div>
+        <div id="d-order-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../static/js/admin-sidebar.js"></script>
+<script>
+  renderSidebar('customers');
+  let customers = JSON.parse(localStorage.getItem('sbs_customers') || '[]');
+  const orders = JSON.parse(localStorage.getItem('sbs_orders') || '[]');
+  let currentPage = 1;
+  const perPage = 15;
+
+  function fmtDate(iso) { if (!iso) return '—'; return new Date(iso).toLocaleDateString('en-KE',{day:'2-digit',month:'short',year:'numeric'}); }
+  function fmtAmt(n) { return 'KES ' + Number(n).toLocaleString('en-KE',{minimumFractionDigits:2}); }
+  function initials(name) { return (name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2); }
+
+  function getCustomerOrders(email) { return orders.filter(o => o.customer_email === email); }
+  function getCustomerSpend(email) { return getCustomerOrders(email).filter(o=>o.payment_status==='paid').reduce((s,o)=>s+Number(o.total_amount||0),0); }
+
+  // Summary
+  const withOrders = customers.filter(c => getCustomerOrders(c.email).length > 0).length;
+  const totalRevenue = customers.reduce((s,c) => s + getCustomerSpend(c.email), 0);
+  document.getElementById('s-total').textContent = customers.length;
+  document.getElementById('s-with-orders').textContent = withOrders;
+  document.getElementById('s-revenue').textContent = fmtAmt(totalRevenue);
+
+  function getFiltered() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const sort = document.getElementById('sortFilter').value;
+    let list = customers.filter(c => !search ||
+      (c.full_name||'').toLowerCase().includes(search) ||
+      (c.email||'').toLowerCase().includes(search) ||
+      (c.phone||'').toLowerCase().includes(search));
+    if (sort === 'name') list.sort((a,b) => (a.full_name||'').localeCompare(b.full_name||''));
+    else if (sort === 'orders') list.sort((a,b) => getCustomerOrders(b.email).length - getCustomerOrders(a.email).length);
+    else if (sort === 'spent') list.sort((a,b) => getCustomerSpend(b.email) - getCustomerSpend(a.email));
+    else list.sort((a,b) => new Date(b.created_at||0) - new Date(a.created_at||0));
+    return list;
+  }
+
+  function renderTable() {
+    const filtered = getFiltered();
+    document.getElementById('resultsCount').textContent = filtered.length + ' customer' + (filtered.length!==1?'s':'');
+    const total = Math.ceil(filtered.length / perPage);
+    if (currentPage > total) currentPage = Math.max(1, total);
+    const start = (currentPage-1)*perPage;
+    const page = filtered.slice(start, start+perPage);
+    const tbody = document.getElementById('customersBody');
+    if (!page.length) {
+      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><p>${customers.length===0?'No registered customers yet. Customers will appear here once they create an account.':'No customers match your search.'}</p></div></td></tr>`;
+      document.getElementById('pagination').style.display = 'none'; return;
+    }
+    tbody.innerHTML = page.map(c => {
+      const cOrders = getCustomerOrders(c.email);
+      const spent = getCustomerSpend(c.email);
+      return `<tr>
+        <td><input type="checkbox" class="row-cb" data-id="${c.id}" onchange="updateBulkBar()"></td>
+        <td><div class="customer-cell">
+          <div class="avatar-circle">${initials(c.full_name)}</div>
+          <div onclick="openDetail('${c.id}')" style="cursor:pointer;"><div style="font-weight:500;">${c.full_name||'—'}</div><div style="font-size:11.5px;color:#9AA3AF;">${c.email||''}</div></div>
+        </div></td>
+        <td style="font-size:13px;color:#5A6473;">${c.phone||'—'}</td>
+        <td class="t-right">${cOrders.length}</td>
+        <td class="t-right"><strong>${fmtAmt(spent)}</strong></td>
+        <td style="font-size:12.5px;color:#5A6473;">${fmtDate(c.created_at)}</td>
+        <td class="t-right"><div class="action-btns">
+          <button class="icon-btn" title="View" onclick="event.stopPropagation();openDetail('${c.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div></td>
+      </tr>`;
+    }).join('');
+    const pag = document.getElementById('pagination');
+    if (filtered.length > perPage) {
+      pag.style.display = 'flex';
+      document.getElementById('pageInfo').textContent = `Showing ${start+1}–${Math.min(start+perPage,filtered.length)} of ${filtered.length}`;
+      let btns = '';
+      for (let i=1;i<=total;i++) btns += `<button class="page-btn ${i===currentPage?'active':''}" onclick="currentPage=${i};renderTable()">${i}</button>`;
+      document.getElementById('pageBtns').innerHTML = btns;
+    } else { pag.style.display = 'none'; }
+  }
+
+  function openDetail(id) {
+    const c = customers.find(x => x.id === id);
+    if (!c) return;
+    const cOrders = getCustomerOrders(c.email);
+    const spent = getCustomerSpend(c.email);
+    const lastOrder = cOrders.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+    document.getElementById('d-avatar').textContent = initials(c.full_name);
+    document.getElementById('d-name').textContent = c.full_name||'—';
+    document.getElementById('d-email').textContent = c.email||'';
+    document.getElementById('d-email2').textContent = c.email||'—';
+    document.getElementById('d-phone').textContent = c.phone||'—';
+    document.getElementById('d-address').textContent = c.address||'—';
+    document.getElementById('d-joined').textContent = fmtDate(c.created_at);
+    document.getElementById('d-orders').textContent = cOrders.length;
+    document.getElementById('d-spent').textContent = fmtAmt(spent);
+    document.getElementById('d-last').textContent = lastOrder ? fmtDate(lastOrder.created_at) : '—';
+    const payBadge = s => { const m={paid:'badge-paid',pending:'badge-unpaid',failed:'badge-failed'}; return `<span class="badge ${m[s]||'badge-unpaid'}" style="font-size:10px;">${s==='paid'?'Paid':s==='failed'?'Failed':'Unpaid'}</span>`; };
+    document.getElementById('d-order-list').innerHTML = cOrders.length
+      ? cOrders.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).map(o=>`
+          <div class="order-mini">
+            <div class="order-mini-top">
+              <span class="order-mini-inv">${o.invoice_number||'—'}</span>
+              ${payBadge(o.payment_status)}
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:4px;">
+              <span class="order-mini-date">${fmtDate(o.created_at)}</span>
+              <strong style="font-size:12.5px;">${fmtAmt(o.total_amount||0)}</strong>
+            </div>
+          </div>`).join('')
+      : '<p style="font-size:13px;color:#9AA3AF;padding:8px 0;">No orders placed yet.</p>';
+    document.getElementById('detailOverlay').classList.add('open');
+  }
+  function closeDetail() { document.getElementById('detailOverlay').classList.remove('open'); }
+
+  function exportCSV() {
+    const f = getFiltered();
+    if (!f.length) return alert('Nothing to export.');
+    const rows = [['Name','Email','Phone','Orders','Total Spent','Joined']];
+    f.forEach(c => rows.push([c.full_name||'',c.email||'',c.phone||'',getCustomerOrders(c.email).length,getCustomerSpend(c.email),fmtDate(c.created_at)]));
+    const csv = rows.map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    a.download='sbs_customers.csv'; a.click();
+  }
+
+  document.getElementById('detailOverlay').addEventListener('click', e => { if (e.target===document.getElementById('detailOverlay')) closeDetail(); });
+  renderTable();
+
+  function getSelected() {
+    return [...document.querySelectorAll('.row-cb:checked')].map(cb => cb.dataset.id);
+  }
+  function updateBulkBar() {
+    const sel = getSelected();
+    const bar = document.getElementById('bulkBar');
+    bar.classList.toggle('visible', sel.length > 0);
+    document.getElementById('bulkCount').textContent = sel.length + ' customer' + (sel.length !== 1 ? 's' : '') + ' selected';
+    const all = document.querySelectorAll('.row-cb');
+    const sa = document.getElementById('selectAll');
+    if (sa) sa.checked = all.length > 0 && sel.length === all.length;
+  }
+  function toggleSelectAll(cb) {
+    document.querySelectorAll('.row-cb').forEach(r => r.checked = cb.checked);
+    updateBulkBar();
+  }
+  function clearSelection() {
+    document.querySelectorAll('.row-cb').forEach(r => r.checked = false);
+    const sa = document.getElementById('selectAll');
+    if (sa) sa.checked = false;
+    updateBulkBar();
+  }
+  function bulkDelete() {
+    const ids = getSelected();
+    if (!ids.length) return;
+    if (!confirm(`Delete ${ids.length} selected customer${ids.length !== 1 ? 's' : ''}? This cannot be undone.`)) return;
+    customers = customers.filter(c => !ids.includes(c.id));
+    localStorage.setItem('sbs_customers', JSON.stringify(customers));
+    clearSelection();
+    renderTable();
+  }
+
+</script>
+</body>
+</html>

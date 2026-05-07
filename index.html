@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SBS Advertising Ltd — Website Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: #0D1B2A; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; }
+
+  .top { text-align: center; margin-bottom: 40px; }
+  .logo-wrap { display: flex; align-items: center; gap: 14px; justify-content: center; margin-bottom: 20px; }
+  .logo-box { width: 56px; height: 56px; background: #0A7E8C; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .logo-text { text-align: left; }
+  .logo-name { font-size: 20px; font-weight: 700; color: #fff; }
+  .logo-tag { font-size: 12px; color: #F5C518; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 2px; }
+  .subtitle { font-size: 14px; color: rgba(255,255,255,0.45); margin-top: 6px; }
+
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; max-width: 580px; margin-bottom: 28px; }
+  .card { background: #fff; border-radius: 16px; padding: 28px 24px; text-decoration: none; transition: all 0.2s; border: 2px solid transparent; }
+  .card:hover { transform: translateY(-4px); border-color: #0A7E8C; }
+  .card-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+  .card-icon.teal { background: #E0F5F7; }
+  .card-icon.navy { background: #E8EEF8; }
+  .card-icon svg { width: 24px; height: 24px; }
+  .card-icon.teal svg { color: #0A7E8C; }
+  .card-icon.navy svg { color: #1B3A8A; }
+  .card h2 { font-size: 17px; font-weight: 600; color: #1A1A2E; margin-bottom: 6px; }
+  .card p { font-size: 13px; color: #7A8491; line-height: 1.55; }
+  .card .arrow { display: inline-block; margin-top: 14px; font-size: 13px; font-weight: 500; color: #0A7E8C; }
+
+  .note { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px 20px; max-width: 580px; width: 100%; }
+  .note-title { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  .steps { display: flex; flex-direction: column; gap: 8px; }
+  .step { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.5; }
+  .step-num { width: 20px; height: 20px; border-radius: 50%; background: #0A7E8C; color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="logo-wrap">
+      <div class="logo-box">SBS</div>
+      <div class="logo-text">
+        <div class="logo-name">SBS Advertising Ltd</div>
+        <div class="logo-tag">Making Your Brand Visible</div>
+      </div>
+    </div>
+    <div class="subtitle">Interactive website demo — explore both sides below</div>
+  </div>
+
+  <div class="cards">
+    <a href="store/index.html" class="card">
+      <div class="card-icon teal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <path d="M16 10a4 4 0 01-8 0"/>
+        </svg>
+      </div>
+      <h2>Customer store</h2>
+      <p>Browse banners, neon signs, printing services and signage. Add to cart and checkout.</p>
+      <div class="arrow">Open store →</div>
+    </a>
+    <a href="admin/dashboard.html" class="card">
+      <div class="card-icon navy">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+        </svg>
+      </div>
+      <h2>Admin panel</h2>
+      <p>Manage products, view orders, download invoices and track customers.</p>
+      <div class="arrow">Open admin →</div>
+    </a>
+  </div>
+
+  <div class="note">
+    <div class="note-title">How to explore this demo</div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div>Open the <strong style="color:#fff;">Admin panel</strong> and go to Products — your 12 sample products are already loaded.</div>
+      <div class="step"><div class="step-num">2</div>Open the <strong style="color:#fff;">Customer store</strong> to see those products live. Browse, filter by category, add items to your cart.</div>
+      <div class="step"><div class="step-num">3</div>Go through checkout — fill in any details and place an order. Then check the admin Orders page to see it appear.</div>
+      <div class="step"><div class="step-num">4</div>All data saves in your browser. Nothing is sent anywhere — this is a fully offline demo.</div>
+    </div>
+  </div>
+</body>
+</html>

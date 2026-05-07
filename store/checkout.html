@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkout — SBS Advertising</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../static/css/store-shared.css">
+<style>
+  .page-wrap { max-width: 1100px; margin: 0 auto; padding: 36px 40px; }
+  .page-title { font-size: 24px; font-weight: 700; color: #1A1A2E; margin-bottom: 8px; }
+  .page-sub { font-size: 14px; color: #8A93A0; margin-bottom: 28px; }
+  .checkout-steps { display: flex; align-items: center; gap: 0; margin-bottom: 36px; }
+  .step { display: flex; align-items: center; gap: 10px; }
+  .step-circle { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+  .step-circle.done { background: var(--brand); color: #fff; }
+  .step-circle.active { background: var(--navy); color: #fff; }
+  .step-circle.inactive { background: #F0F3F6; color: #9AA3AF; }
+  .step-label { font-size: 13px; font-weight: 500; }
+  .step-label.active { color: #1A1A2E; }
+  .step-label.inactive { color: #9AA3AF; }
+  .step-line { flex: 1; height: 1px; background: #E8ECF0; margin: 0 16px; }
+  .checkout-layout { display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+  .checkout-form-panel { display: flex; flex-direction: column; gap: 20px; }
+  .form-card { background: #fff; border-radius: 14px; border: 1px solid #E8ECF0; padding: 24px; }
+  .form-card-title { font-size: 15px; font-weight: 600; color: #1A1A2E; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+  .form-card-title svg { width: 18px; height: 18px; color: var(--brand); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1/-1; }
+  .form-group label { font-size: 12.5px; font-weight: 500; color: #4A5260; }
+  .form-group input, .form-group select, .form-group textarea { height: 40px; border: 1px solid #D8DDE4; border-radius: 8px; padding: 0 12px; font-size: 13.5px; font-family: var(--font); color: #1A1A2E; background: #fff; outline: none; transition: border-color 0.15s; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--brand); }
+  .form-group textarea { height: 80px; padding: 10px 12px; resize: vertical; }
+  .form-required { color: #C0291F; }
+  .payment-methods { display: flex; flex-direction: column; gap: 10px; }
+  .payment-option { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 2px solid #E8ECF0; border-radius: 10px; cursor: pointer; transition: all 0.15s; }
+  .payment-option.selected { border-color: var(--brand); background: var(--brand-light); }
+  .payment-option input[type="radio"] { width: 18px; height: 18px; accent-color: var(--brand); flex-shrink: 0; }
+  .payment-icon-big { width: 44px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .payment-icon-big.mpesa { background: #16A34A; color: #fff; }
+  .payment-icon-big.card { background: #1A3A8A; color: #fff; }
+  .payment-name { font-size: 14px; font-weight: 500; color: #1A1A2E; }
+  .payment-desc { font-size: 12px; color: #8A93A0; margin-top: 2px; }
+  /* ORDER SUMMARY */
+  .order-summary { background: #fff; border-radius: 14px; border: 1px solid #E8ECF0; padding: 24px; height: fit-content; position: sticky; top: 80px; }
+  .summary-title { font-size: 15px; font-weight: 600; color: #1A1A2E; margin-bottom: 18px; }
+  .summary-items { max-height: 280px; overflow-y: auto; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #F0F3F6; }
+  .summary-item { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid #F8FAFB; }
+  .summary-item:last-child { border-bottom: none; }
+  .summary-item-img { width: 44px; height: 44px; border-radius: 8px; background: #F4F6F8; border: 1px solid #E8ECF0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
+  .summary-item-img img { width: 100%; height: 100%; object-fit: cover; }
+  .summary-item-img svg { width: 20px; height: 20px; color: #C0C8D2; }
+  .summary-item-name { font-size: 13px; font-weight: 500; color: #1A1A2E; flex: 1; line-height: 1.3; }
+  .summary-item-qty { font-size: 11.5px; color: #9AA3AF; margin-top: 2px; }
+  .summary-item-price { font-size: 13px; font-weight: 600; color: #1A1A2E; flex-shrink: 0; }
+  .totals-row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 6px 0; }
+  .totals-row.grand { font-size: 16px; font-weight: 700; border-top: 2px solid #E8ECF0; padding-top: 12px; margin-top: 6px; }
+  .totals-label { color: #7A8491; }
+  .place-order-btn { width: 100%; justify-content: center; height: 50px; font-size: 15px; margin-top: 16px; }
+  .secure-note { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; color: #9AA3AF; margin-top: 10px; }
+  .secure-note svg { width: 13px; height: 13px; }
+</style>
+</head>
+<body>
+<nav class="nav" id="nav-mount"></nav>
+<div class="page-wrap">
+  <div class="page-title">Checkout</div>
+  <div class="page-sub">Complete your order below</div>
+  <div class="checkout-steps">
+    <div class="step"><div class="step-circle done">✓</div><span class="step-label active">Cart</span></div>
+    <div class="step-line"></div>
+    <div class="step"><div class="step-circle active">2</div><span class="step-label active">Details</span></div>
+    <div class="step-line"></div>
+    <div class="step"><div class="step-circle inactive">3</div><span class="step-label inactive">Payment</span></div>
+    <div class="step-line"></div>
+    <div class="step"><div class="step-circle inactive">4</div><span class="step-label inactive">Confirmation</span></div>
+  </div>
+  <div class="checkout-layout">
+    <div class="checkout-form-panel">
+      <div class="form-card">
+        <div class="form-card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Your details
+        </div>
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Full name <span class="form-required">*</span></label>
+            <input type="text" id="f-name" placeholder="e.g. James Mwangi" required>
+          </div>
+          <div class="form-group">
+            <label>Email address <span class="form-required">*</span></label>
+            <input type="email" id="f-email" placeholder="james@example.com" required>
+          </div>
+          <div class="form-group">
+            <label>Phone number <span class="form-required">*</span></label>
+            <input type="text" id="f-phone" placeholder="07XX XXX XXX" required>
+          </div>
+        </div>
+      </div>
+      <div class="form-card">
+        <div class="form-card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Delivery address
+        </div>
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Street address <span class="form-required">*</span></label>
+            <input type="text" id="f-address" placeholder="e.g. Moi Avenue, Building Name" required>
+          </div>
+          <div class="form-group">
+            <label>City / Town</label>
+            <input type="text" id="f-city" placeholder="Nairobi" value="Nairobi">
+          </div>
+          <div class="form-group">
+            <label>Additional notes</label>
+            <input type="text" id="f-notes" placeholder="Landmark, floor number...">
+          </div>
+        </div>
+      </div>
+      <div class="form-card">
+        <div class="form-card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Payment method
+        </div>
+        <div class="payment-methods">
+          <label class="payment-option selected" id="opt-mpesa">
+            <input type="radio" name="payment" value="mpesa" checked onchange="selectPayment(this)">
+            <div class="payment-icon-big mpesa">M-PESA</div>
+            <div><div class="payment-name">M-Pesa</div><div class="payment-desc">Pay via M-Pesa STK push — enter your number and confirm on your phone</div></div>
+          </label>
+          <label class="payment-option" id="opt-card">
+            <input type="radio" name="payment" value="card" onchange="selectPayment(this)">
+            <div class="payment-icon-big card">CARD</div>
+            <div><div class="payment-name">Debit / Credit card</div><div class="payment-desc">Visa, Mastercard and other cards via Paystack</div></div>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="order-summary">
+      <div class="summary-title">Order summary</div>
+      <div class="summary-items" id="summary-items"></div>
+      <div class="totals-row"><span class="totals-label">Subtotal</span><span id="s-subtotal">KES 0</span></div>
+      <div class="totals-row"><span class="totals-label">VAT (16%)</span><span id="s-tax">KES 0</span></div>
+      <div class="totals-row"><span class="totals-label">Delivery</span><span style="color:#1A6B38;">Free</span></div>
+      <div class="totals-row grand"><span>Total</span><span id="s-total">KES 0</span></div>
+      <button class="btn btn-accent place-order-btn" onclick="placeOrder()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Place order & pay
+      </button>
+      <div class="secure-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        Secured by Paystack
+      </div>
+    </div>
+  </div>
+</div>
+<footer class="footer"><div id="footer-mount"></div></footer>
+<script src="../static/js/store-shared.js"></script>
+<script>
+  renderNav('home');
+  renderFooter();
+  updateCartCount();
+
+  const cart = getCart();
+  if (!cart.length) location.href = 'cart.html';
+
+  // Prefill from session
+  const session = getSession();
+  if (session) {
+    document.getElementById('f-name').value = session.full_name || '';
+    document.getElementById('f-email').value = session.email || '';
+    document.getElementById('f-phone').value = session.phone || '';
+  }
+
+  // Render summary items
+  const subtotal = cartSubtotal();
+  const tax = subtotal * 0.16;
+  const total = subtotal + tax;
+
+  document.getElementById('summary-items').innerHTML = cart.map(item => `
+    <div class="summary-item">
+      <div class="summary-item-img">${item.image?`<img src="${item.image}" alt="${item.name}">`:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>'}</div>
+      <div style="flex:1;"><div class="summary-item-name">${item.name}</div><div class="summary-item-qty">x${item.quantity}</div></div>
+      <div class="summary-item-price">${fmtAmt(item.price * item.quantity)}</div>
+    </div>`).join('');
+  document.getElementById('s-subtotal').textContent = fmtAmt(subtotal);
+  document.getElementById('s-tax').textContent = fmtAmt(tax);
+  document.getElementById('s-total').textContent = fmtAmt(total);
+
+  function selectPayment(radio) {
+    document.querySelectorAll('.payment-option').forEach(o => o.classList.remove('selected'));
+    radio.closest('.payment-option').classList.add('selected');
+  }
+
+  function placeOrder() {
+    const name = document.getElementById('f-name').value.trim();
+    const email = document.getElementById('f-email').value.trim();
+    const phone = document.getElementById('f-phone').value.trim();
+    const address = document.getElementById('f-address').value.trim();
+    if (!name || !email || !phone || !address) { showToast('Please fill in all required fields.', 'error'); return; }
+
+    // Build order and save to localStorage (in production this posts to Flask backend)
+    const orderId = Date.now().toString();
+    const invoiceNum = 'SBS-' + new Date().toISOString().slice(0,7).replace('-','') + '-' + Math.random().toString(36).slice(2,8).toUpperCase();
+    const order = {
+      id: orderId,
+      invoice_number: invoiceNum,
+      customer_name: name,
+      customer_email: email,
+      customer_phone: phone,
+      delivery_address: address + ', ' + (document.getElementById('f-city').value || 'Nairobi'),
+      subtotal: parseFloat(subtotal.toFixed(2)),
+      tax_amount: parseFloat(tax.toFixed(2)),
+      total_amount: parseFloat(total.toFixed(2)),
+      payment_status: 'paid',
+      order_status: 'processing',
+      paystack_reference: 'PAY-' + Math.random().toString(36).slice(2,12).toUpperCase(),
+      order_items: cart.map(i => ({ product_id: i.product_id, product_name: i.name, unit_price: i.price, quantity: i.quantity, total_price: parseFloat((i.price*i.quantity).toFixed(2)) })),
+      created_at: new Date().toISOString()
+    };
+
+    const orders = JSON.parse(localStorage.getItem('sbs_orders') || '[]');
+    orders.unshift(order);
+    localStorage.setItem('sbs_orders', JSON.stringify(orders));
+
+    // Also add customer if not exists
+    const customers = JSON.parse(localStorage.getItem('sbs_customers') || '[]');
+    if (!customers.find(c => c.email === email)) {
+      customers.push({ id: Date.now().toString(), full_name: name, email, phone, created_at: new Date().toISOString() });
+      localStorage.setItem('sbs_customers', JSON.stringify(customers));
+    }
+
+    clearCart();
+    location.href = 'order-confirmation.html?id=' + orderId;
+  }
+</script>
+</body>
+</html>

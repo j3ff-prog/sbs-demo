@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop — SBS Advertising</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../static/css/store-shared.css">
+<style>
+  .hero { background: var(--navy); padding: 48px 40px; }
+  .hero-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 40px; }
+  .hero-tag { display: inline-flex; align-items: center; gap: 6px; background: rgba(10,126,140,0.25); color: #5DD8E4; font-size: 12px; font-weight: 500; padding: 4px 12px; border-radius: 20px; margin-bottom: 14px; border: 1px solid rgba(10,126,140,0.4); }
+  .hero-title { font-size: 36px; font-weight: 700; color: #fff; line-height: 1.2; margin-bottom: 12px; }
+  .hero-title span { color: var(--accent); }
+  .hero-sub { font-size: 15px; color: rgba(255,255,255,0.6); line-height: 1.6; max-width: 500px; }
+  .hero-actions { display: flex; gap: 12px; margin-top: 24px; }
+  .hero-stats { display: flex; gap: 32px; margin-top: 32px; }
+  .hero-stat-val { font-size: 22px; font-weight: 700; color: #fff; }
+  .hero-stat-label { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+  .hero-visual { width: 280px; height: 180px; background: rgba(10,126,140,0.15); border-radius: 16px; border: 1px solid rgba(10,126,140,0.3); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .hero-visual svg { width: 80px; height: 80px; color: rgba(10,126,140,0.6); }
+
+  .shop-layout { max-width: 1200px; margin: 0 auto; padding: 32px 40px; display: grid; grid-template-columns: 220px 1fr; gap: 28px; }
+
+  /* SIDEBAR FILTERS */
+  .filters-panel { }
+  .filter-card { background: #fff; border-radius: 12px; border: 1px solid #E8ECF0; padding: 18px; margin-bottom: 16px; }
+  .filter-card-title { font-size: 13px; font-weight: 600; color: #1A1A2E; margin-bottom: 12px; }
+  .cat-item { display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; border-radius: 8px; cursor: pointer; transition: all 0.15s; font-size: 13.5px; color: #5A6473; }
+  .cat-item:hover { background: #F4F6F8; color: #1A1A2E; }
+  .cat-item.active { background: var(--brand-light); color: var(--brand-dark); font-weight: 500; }
+  .cat-count { font-size: 11px; background: #F0F3F6; color: #8A93A0; padding: 1px 7px; border-radius: 10px; }
+  .cat-item.active .cat-count { background: rgba(10,126,140,0.15); color: var(--brand-dark); }
+  .price-range { display: flex; flex-direction: column; gap: 10px; }
+  .price-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .price-inputs input { height: 34px; border: 1px solid #E0E5EB; border-radius: 6px; padding: 0 10px; font-size: 12.5px; font-family: var(--font); outline: none; }
+  .price-inputs input:focus { border-color: var(--brand); }
+
+  /* PRODUCTS AREA */
+  .products-area { }
+  .products-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .products-count { font-size: 13.5px; color: #5A6473; flex: 1; }
+  .sort-select { height: 36px; border: 1px solid #E0E5EB; border-radius: 8px; padding: 0 12px; font-size: 13px; font-family: var(--font); background: #fff; color: #1A1A2E; cursor: pointer; outline: none; }
+  .sort-select:focus { border-color: var(--brand); }
+  .view-btns { display: flex; gap: 4px; }
+  .view-btn { width: 34px; height: 34px; border: 1px solid #E0E5EB; background: #fff; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #8A93A0; transition: all 0.15s; }
+  .view-btn.active, .view-btn:hover { background: var(--brand-light); border-color: var(--brand); color: var(--brand); }
+  .view-btn svg { width: 15px; height: 15px; }
+
+  /* PRODUCT GRID */
+  .products-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .products-grid.list-view { grid-template-columns: 1fr; }
+  .product-card { background: #fff; border-radius: 12px; border: 1px solid #E8ECF0; overflow: hidden; transition: all 0.2s; cursor: pointer; }
+  .product-card:hover { border-color: var(--brand); transform: translateY(-2px); }
+  .product-img { width: 100%; aspect-ratio: 4/3; background: #F4F6F8; object-fit: cover; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+  .product-img img { width: 100%; height: 100%; object-fit: cover; }
+  .product-img-placeholder { width: 100%; aspect-ratio: 4/3; background: #F4F6F8; display: flex; align-items: center; justify-content: center; }
+  .product-img-placeholder svg { width: 48px; height: 48px; color: #C0C8D2; }
+  .product-badge { position: absolute; top: 10px; left: 10px; background: var(--brand); color: #fff; font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 6px; }
+  .product-badge.out { background: #C0291F; }
+  .product-info { padding: 14px 16px; }
+  .product-cat { font-size: 11px; color: #9AA3AF; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+  .product-name { font-size: 14px; font-weight: 500; color: #1A1A2E; line-height: 1.35; margin-bottom: 8px; }
+  .product-desc { font-size: 12.5px; color: #7A8491; line-height: 1.5; margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .product-footer { display: flex; align-items: center; justify-content: space-between; }
+  .product-price { font-size: 16px; font-weight: 700; color: var(--brand-dark); }
+  .product-price-sub { font-size: 11px; color: #9AA3AF; }
+  .add-btn { width: 34px; height: 34px; background: var(--brand); color: #fff; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; }
+  .add-btn:hover { background: var(--brand-dark); }
+  .add-btn svg { width: 16px; height: 16px; }
+  .add-btn.out-btn { background: #F4F6F8; color: #C0C8D2; cursor: not-allowed; }
+
+  /* LIST VIEW CARD */
+  .product-card.list-card { display: flex; }
+  .list-card .product-img-placeholder { width: 160px; aspect-ratio: unset; height: 130px; flex-shrink: 0; border-radius: 0; }
+  .list-card .product-img { width: 160px; height: 130px; flex-shrink: 0; border-radius: 0; aspect-ratio: unset; }
+  .list-card .product-info { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+
+  .empty-state { text-align: center; padding: 60px 20px; }
+  .empty-state p { font-size: 14px; color: #8A93A0; margin-top: 8px; }
+
+  /* PAGINATION */
+  .pagination { display: flex; justify-content: center; gap: 6px; margin-top: 32px; }
+  .page-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid #E0E5EB; background: #fff; font-size: 13px; font-family: var(--font); cursor: pointer; display: flex; align-items: center; justify-content: center; color: #5A6473; transition: all 0.15s; }
+  .page-btn:hover { background: #F4F6F8; }
+  .page-btn.active { background: var(--brand); color: #fff; border-color: var(--brand); font-weight: 600; }
+</style>
+</head>
+<body>
+<nav class="nav" id="nav-mount"></nav>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="hero-tag">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Making Your Brand Visible
+      </div>
+      <div class="hero-title">Banners, Neon Lights<br>&amp; <span>Signage Solutions</span></div>
+      <div class="hero-sub">Premium advertising materials for your brand. Banners, neon signs, digital printing and more — order online, delivered across Kenya.</div>
+      <div class="hero-actions">
+        <button class="btn btn-accent" onclick="document.querySelector('.shop-layout').scrollIntoView({behavior:'smooth'})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+          Shop now
+        </button>
+        <button class="btn" style="background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);" onclick="location.href='login.html'">My account</button>
+      </div>
+      <div class="hero-stats" id="hero-stats">
+        <div><div class="hero-stat-val" id="hs-products">0</div><div class="hero-stat-label">Products</div></div>
+        <div><div class="hero-stat-val" id="hs-cats">0</div><div class="hero-stat-label">Categories</div></div>
+        <div><div class="hero-stat-val">24h</div><div class="hero-stat-label">Delivery</div></div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+    </div>
+  </div>
+</div>
+
+<div class="shop-layout">
+  <!-- FILTERS -->
+  <div class="filters-panel">
+    <div class="filter-card">
+      <div class="filter-card-title">Categories</div>
+      <div id="cat-list"></div>
+    </div>
+    <div class="filter-card">
+      <div class="filter-card-title">Price range (KES)</div>
+      <div class="price-range">
+        <div class="price-inputs">
+          <input type="number" id="priceMin" placeholder="Min" oninput="renderProducts()">
+          <input type="number" id="priceMax" placeholder="Max" oninput="renderProducts()">
+        </div>
+        <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;" onclick="document.getElementById('priceMin').value='';document.getElementById('priceMax').value='';renderProducts();">Clear</button>
+      </div>
+    </div>
+    <div class="filter-card">
+      <div class="filter-card-title">Availability</div>
+      <div class="cat-item active" id="avail-all" onclick="setAvail('all',this)">All products</div>
+      <div class="cat-item" id="avail-instock" onclick="setAvail('instock',this)">In stock only</div>
+    </div>
+  </div>
+
+  <!-- PRODUCTS -->
+  <div class="products-area">
+    <div class="products-toolbar">
+      <span class="products-count" id="products-count">Loading...</span>
+      <select class="sort-select" id="sortSelect" onchange="renderProducts()">
+        <option value="default">Default</option>
+        <option value="price-asc">Price: low to high</option>
+        <option value="price-desc">Price: high to low</option>
+        <option value="name">Name A–Z</option>
+      </select>
+      <div class="view-btns">
+        <button class="view-btn active" id="grid-btn" onclick="setView('grid')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        </button>
+        <button class="view-btn" id="list-btn" onclick="setView('list')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="products-grid" id="products-grid"></div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<footer class="footer"><div id="footer-mount"></div></footer>
+
+<script src="../static/js/demo-seed.js"></script>
+<script src="../static/js/store-shared.js"></script>
+<script>
+  renderNav('home');
+  renderFooter();
+  updateCartCount();
+
+  const products = JSON.parse(localStorage.getItem('sbs_products') || '[]').filter(p => p.active !== false);
+  let activeCategory = 'All';
+  let activeAvail = 'all';
+  let viewMode = 'grid';
+  let currentPage = 1;
+  const perPage = 9;
+
+  // Check URL params for search/category
+  const params = new URLSearchParams(location.search);
+  if (params.get('search')) { /* handled in renderProducts */ }
+  if (params.get('cat')) activeCategory = params.get('cat');
+
+  // Hero stats
+  document.getElementById('hs-products').textContent = products.length;
+  const cats = [...new Set(products.map(p => p.category).filter(Boolean))];
+  document.getElementById('hs-cats').textContent = cats.length;
+
+  // Category list
+  function buildCatList() {
+    const allCount = products.length;
+    let html = `<div class="cat-item ${activeCategory==='All'?'active':''}" onclick="setCategory('All',this)">All products <span class="cat-count">${allCount}</span></div>`;
+    cats.forEach(c => {
+      const count = products.filter(p => p.category === c).length;
+      html += `<div class="cat-item ${activeCategory===c?'active':''}" onclick="setCategory('${c}',this)">${c} <span class="cat-count">${count}</span></div>`;
+    });
+    document.getElementById('cat-list').innerHTML = html;
+  }
+  buildCatList();
+
+  function setCategory(cat) { activeCategory = cat; currentPage = 1; buildCatList(); renderProducts(); }
+  function setAvail(val, el) {
+    activeAvail = val;
+    document.querySelectorAll('#avail-all,#avail-instock').forEach(e => e.classList.remove('active'));
+    el.classList.add('active');
+    renderProducts();
+  }
+  function setView(v) {
+    viewMode = v;
+    document.getElementById('grid-btn').classList.toggle('active', v==='grid');
+    document.getElementById('list-btn').classList.toggle('active', v==='list');
+    const grid = document.getElementById('products-grid');
+    grid.classList.toggle('list-view', v==='list');
+    renderProducts();
+  }
+
+  function getFiltered() {
+    const search = (params.get('search') || '').toLowerCase();
+    const minP = parseFloat(document.getElementById('priceMin').value) || 0;
+    const maxP = parseFloat(document.getElementById('priceMax').value) || Infinity;
+    const sort = document.getElementById('sortSelect').value;
+    let list = products.filter(p => {
+      const mCat = activeCategory === 'All' || p.category === activeCategory;
+      const mSearch = !search || p.name.toLowerCase().includes(search) || (p.description||'').toLowerCase().includes(search);
+      const mPrice = p.price >= minP && p.price <= maxP;
+      const mAvail = activeAvail === 'all' || p.stock > 0;
+      return mCat && mSearch && mPrice && mAvail;
+    });
+    if (sort === 'price-asc') list.sort((a,b) => a.price - b.price);
+    else if (sort === 'price-desc') list.sort((a,b) => b.price - a.price);
+    else if (sort === 'name') list.sort((a,b) => a.name.localeCompare(b.name));
+    return list;
+  }
+
+  function renderProducts() {
+    const filtered = getFiltered();
+    const total = Math.ceil(filtered.length / perPage);
+    if (currentPage > total) currentPage = Math.max(1, total);
+    const start = (currentPage-1)*perPage;
+    const page = filtered.slice(start, start+perPage);
+    document.getElementById('products-count').textContent = filtered.length + ' product' + (filtered.length!==1?'s':'') + (activeCategory!=='All'?' in '+activeCategory:'');
+
+    const grid = document.getElementById('products-grid');
+    if (!page.length) {
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#C0C8D2" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <p>${products.length===0?'No products available yet. Check back soon!':'No products match your filters.'}</p>
+      </div>`; return;
+    }
+
+    const isList = viewMode === 'list';
+    grid.innerHTML = page.map(p => {
+      const imgEl = p.image
+        ? `<div class="${isList?'product-img':'product-img'}"><img src="${p.image}" alt="${p.name}" onerror="this.parentElement.innerHTML='<svg width=48 height=48 viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;#C0C8D2&quot; stroke-width=&quot;1.5&quot;><rect x=&quot;3&quot; y=&quot;3&quot; width=&quot;18&quot; height=&quot;18&quot; rx=&quot;2&quot;/><circle cx=&quot;8.5&quot; cy=&quot;8.5&quot; r=&quot;1.5&quot;/><polyline points=&quot;21 15 16 10 5 21&quot;/></svg>';" style="width:100%;height:100%;object-fit:cover;">${p.stock<=5&&p.stock>0?'<span class="product-badge">Low stock</span>':p.stock===0?'<span class="product-badge out">Out of stock</span>':''}</div>`
+        : `<div class="product-img-placeholder">${p.stock<=5&&p.stock>0?'<span class="product-badge" style="position:absolute;top:10px;left:10px;">Low stock</span>':p.stock===0?'<span class="product-badge out" style="position:absolute;top:10px;left:10px;">Out of stock</span>':''}<svg viewBox="0 0 24 24" fill="none" stroke="#C0C8D2" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`;
+      return `<div class="product-card${isList?' list-card':''}" onclick="location.href='product.html?id=${p.id}'">
+        ${imgEl}
+        <div class="product-info">
+          <div class="product-cat">${p.category||'General'}</div>
+          <div class="product-name">${p.name}</div>
+          <div class="product-desc">${p.description||'Quality product from SBS Advertising.'}</div>
+          <div class="product-footer">
+            <div>
+              <div class="product-price">${fmtAmt(p.price)}</div>
+              <div class="product-price-sub">${p.stock>0?p.stock+' in stock':'Out of stock'}</div>
+            </div>
+            <button class="add-btn ${p.stock===0?'out-btn':''}" ${p.stock===0?'disabled':''} onclick="event.stopPropagation();handleAddToCart(${JSON.stringify(p).replace(/"/g,'&quot;')})">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Pagination
+    const pag = document.getElementById('pagination');
+    if (total > 1) {
+      let btns = '';
+      for (let i=1;i<=total;i++) btns += `<button class="page-btn ${i===currentPage?'active':''}" onclick="currentPage=${i};renderProducts()">${i}</button>`;
+      pag.innerHTML = btns;
+    } else { pag.innerHTML = ''; }
+  }
+
+  function handleAddToCart(p) {
+    addToCart(p);
+    showToast(p.name + ' added to cart');
+  }
+
+  renderProducts();
+</script>
+</body>
+</html>

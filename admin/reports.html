@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reports — SBS Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../static/css/admin-shared.css">
+<style>
+  .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .panel { background:#fff; border-radius:12px; border:1px solid #E8ECF0; overflow:hidden; }
+  .panel.full { grid-column:1/-1; }
+  .panel-header { padding:16px 20px 12px; border-bottom:1px solid #F0F3F6; display:flex; align-items:center; justify-content:space-between; }
+  .panel-title { font-size:14px; font-weight:600; color:#1A1A2E; }
+  .panel-sub { font-size:12px; color:#8A93A0; margin-top:2px; }
+  .date-range { display:flex; gap:8px; align-items:center; }
+  .date-range input[type="date"] { height:32px; border:1px solid #E0E5EB; border-radius:6px; padding:0 10px; font-size:12px; font-family:var(--font); }
+  .date-range input[type="date"]:focus { border-color:var(--brand); }
+  .apply-btn { height:32px; padding:0 14px; font-size:12px; }
+  /* Chart */
+  .chart-area { padding:16px 20px; }
+  .chart-bars-h { display:flex; flex-direction:column; gap:10px; }
+  .hbar-wrap { display:flex; align-items:center; gap:10px; }
+  .hbar-label { width:110px; font-size:12px; color:#5A6473; text-align:right; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .hbar-track { flex:1; background:#F0F3F6; border-radius:3px; height:24px; overflow:hidden; }
+  .hbar-fill { height:100%; background:var(--brand); border-radius:3px; transition:width 0.4s; display:flex; align-items:center; padding-left:8px; }
+  .hbar-fill-val { font-size:11px; color:#fff; font-weight:500; white-space:nowrap; }
+  .hbar-total { width:100px; font-size:12px; font-weight:500; color:#1A1A2E; flex-shrink:0; }
+  /* Monthly chart */
+  .monthly-chart { display:flex; align-items:flex-end; gap:6px; height:140px; padding:0 20px 16px; }
+  .mbar-wrap { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; justify-content:flex-end; }
+  .mbar { width:100%; border-radius:4px 4px 0 0; min-height:4px; background:var(--brand-light); transition:background 0.2s; cursor:pointer; position:relative; }
+  .mbar:hover { background:var(--brand); }
+  .mbar-label { font-size:10px; color:#9AA3AF; }
+  .mbar-val { font-size:9px; color:#5A6473; }
+  /* Summary table */
+  .summary-table { width:100%; border-collapse:collapse; }
+  .summary-table td { padding:10px 20px; font-size:13px; border-bottom:1px solid #F4F6F8; }
+  .summary-table tr:last-child td { border-bottom:none; }
+  .summary-table td:first-child { color:#7A8491; }
+  .summary-table td:last-child { text-align:right; font-weight:500; color:#1A1A2E; }
+  /* Top products */
+  .top-item { display:flex; align-items:center; gap:12px; padding:10px 20px; border-bottom:1px solid #F4F6F8; }
+  .top-item:last-child { border-bottom:none; }
+  .top-rank { width:22px; height:22px; border-radius:50%; background:var(--brand-light); color:var(--brand-dark); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; flex-shrink:0; }
+  .top-name { flex:1; font-size:13px; color:#1A1A2E; font-weight:500; }
+  .top-units { font-size:12px; color:#8A93A0; }
+  .top-revenue { font-size:13px; font-weight:500; color:#1A1A2E; }
+  .empty-report { padding:40px 20px; text-align:center; font-size:13px; color:#9AA3AF; }
+</style>
+</head>
+<body>
+<div id="sidebar-mount"></div>
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">Reports</div>
+    <div class="date-range">
+      <input type="date" id="dateFrom">
+      <span style="font-size:13px;color:#8A93A0;">to</span>
+      <input type="date" id="dateTo">
+      <button class="btn btn-primary apply-btn" onclick="buildReports()">Apply</button>
+    </div>
+    <button class="btn btn-ghost" onclick="exportReport()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export
+    </button>
+  </div>
+  <div class="page">
+    <div class="report-grid">
+
+      <!-- Monthly revenue -->
+      <div class="panel full">
+        <div class="panel-header">
+          <div><div class="panel-title">Monthly revenue</div><div class="panel-sub" id="revenue-period">Last 7 months</div></div>
+          <div style="font-size:20px;font-weight:600;color:var(--brand);" id="total-revenue-label">KES 0</div>
+        </div>
+        <div class="monthly-chart" id="monthly-chart"></div>
+      </div>
+
+      <!-- Summary stats -->
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Summary</div></div>
+        <table class="summary-table">
+          <tr><td>Total orders</td><td id="r-orders">0</td></tr>
+          <tr><td>Paid orders</td><td id="r-paid">0</td></tr>
+          <tr><td>Pending orders</td><td id="r-pending">0</td></tr>
+          <tr><td>Total revenue</td><td id="r-revenue">KES 0</td></tr>
+          <tr><td>Average order value</td><td id="r-avg">KES 0</td></tr>
+          <tr><td>Total customers</td><td id="r-customers">0</td></tr>
+          <tr><td>Products in catalogue</td><td id="r-products">0</td></tr>
+        </table>
+      </div>
+
+      <!-- Top products -->
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Top products by revenue</div></div>
+        <div id="top-products"></div>
+      </div>
+
+      <!-- Orders by status -->
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Orders by status</div></div>
+        <div class="chart-area"><div class="chart-bars-h" id="status-chart"></div></div>
+      </div>
+
+      <!-- Top customers -->
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Top customers by spend</div></div>
+        <div id="top-customers"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../static/js/admin-sidebar.js"></script>
+<script>
+  renderSidebar('reports');
+
+  const allOrders = JSON.parse(localStorage.getItem('sbs_orders') || '[]');
+  const allProducts = JSON.parse(localStorage.getItem('sbs_products') || '[]');
+  const allCustomers = JSON.parse(localStorage.getItem('sbs_customers') || '[]');
+
+  function fmtAmt(n) { return 'KES ' + Number(n).toLocaleString('en-KE',{minimumFractionDigits:2}); }
+  function fmtDate(iso) { if(!iso) return '—'; return new Date(iso).toLocaleDateString('en-KE',{day:'2-digit',month:'short',year:'numeric'}); }
+
+  // Set default date range: last 6 months
+  const now = new Date();
+  const sixMonthsAgo = new Date(); sixMonthsAgo.setMonth(now.getMonth()-6);
+  document.getElementById('dateTo').value = now.toISOString().split('T')[0];
+  document.getElementById('dateFrom').value = sixMonthsAgo.toISOString().split('T')[0];
+
+  function buildReports() {
+    const from = new Date(document.getElementById('dateFrom').value || 0);
+    const to = new Date(document.getElementById('dateTo').value || Date.now());
+    to.setHours(23,59,59);
+
+    const filtered = allOrders.filter(o => {
+      const d = new Date(o.created_at || 0);
+      return d >= from && d <= to;
+    });
+    const paid = filtered.filter(o => o.payment_status === 'paid');
+    const revenue = paid.reduce((s,o) => s+Number(o.total_amount||0), 0);
+    const pending = filtered.filter(o => o.order_status === 'pending').length;
+    const avg = paid.length ? revenue / paid.length : 0;
+
+    document.getElementById('r-orders').textContent = filtered.length;
+    document.getElementById('r-paid').textContent = paid.length;
+    document.getElementById('r-pending').textContent = pending;
+    document.getElementById('r-revenue').textContent = fmtAmt(revenue);
+    document.getElementById('r-avg').textContent = fmtAmt(avg);
+    document.getElementById('r-customers').textContent = allCustomers.length;
+    document.getElementById('r-products').textContent = allProducts.length;
+    document.getElementById('total-revenue-label').textContent = fmtAmt(revenue);
+
+    // Monthly revenue chart
+    const months = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(); d.setMonth(d.getMonth()-i);
+      months.push({ label: d.toLocaleString('en',{month:'short'}), year:d.getFullYear(), month:d.getMonth(), total:0 });
+    }
+    paid.forEach(o => {
+      const d = new Date(o.created_at);
+      const m = months.find(x => x.month===d.getMonth() && x.year===d.getFullYear());
+      if (m) m.total += Number(o.total_amount||0);
+    });
+    const maxRev = Math.max(...months.map(m=>m.total), 1);
+    document.getElementById('monthly-chart').innerHTML = months.map((m,i) => {
+      const pct = Math.round((m.total/maxRev)*100);
+      return `<div class="mbar-wrap">
+        <div class="mbar-val">${m.total>0?'KES '+Math.round(m.total/1000)+'K':''}</div>
+        <div class="mbar ${i===6?'current':''}" style="height:${Math.max(pct,4)}%;${i===6?'background:var(--brand)':''}" title="${fmtAmt(m.total)}"></div>
+        <span class="mbar-label">${m.label}</span>
+      </div>`;
+    }).join('');
+
+    // Status chart
+    const statuses = [
+      {key:'pending',label:'Pending',color:'#F5C518'},
+      {key:'processing',label:'Processing',color:'#378ADD'},
+      {key:'shipped',label:'Shipped',color:'#A855F7'},
+      {key:'delivered',label:'Delivered',color:'#1A6B38'},
+      {key:'cancelled',label:'Cancelled',color:'#C0291F'},
+    ];
+    const maxStat = Math.max(...statuses.map(s=>filtered.filter(o=>o.order_status===s.key).length), 1);
+    document.getElementById('status-chart').innerHTML = statuses.map(s => {
+      const count = filtered.filter(o=>o.order_status===s.key).length;
+      const pct = Math.round((count/maxStat)*100);
+      return `<div class="hbar-wrap">
+        <span class="hbar-label">${s.label}</span>
+        <div class="hbar-track">
+          <div class="hbar-fill" style="width:${Math.max(pct,count>0?8:0)}%;background:${s.color};">
+            ${count>0?`<span class="hbar-fill-val">${count}</span>`:''}
+          </div>
+        </div>
+        <span class="hbar-total">${count} order${count!==1?'s':''}</span>
+      </div>`;
+    }).join('');
+
+    // Top products
+    const productRevenue = {};
+    paid.forEach(o => {
+      (o.order_items||[]).forEach(item => {
+        if (!productRevenue[item.product_name]) productRevenue[item.product_name] = {revenue:0, units:0};
+        productRevenue[item.product_name].revenue += Number(item.total_price||0);
+        productRevenue[item.product_name].units += Number(item.quantity||0);
+      });
+    });
+    const topProducts = Object.entries(productRevenue).sort((a,b)=>b[1].revenue-a[1].revenue).slice(0,6);
+    const tpEl = document.getElementById('top-products');
+    tpEl.innerHTML = topProducts.length
+      ? topProducts.map(([name,d],i) => `<div class="top-item">
+          <div class="top-rank">${i+1}</div>
+          <div class="top-name">${name}</div>
+          <div class="top-units">${d.units} units</div>
+          <div class="top-revenue">${fmtAmt(d.revenue)}</div>
+        </div>`).join('')
+      : '<div class="empty-report">No sales data yet.</div>';
+
+    // Top customers
+    const custSpend = {};
+    paid.forEach(o => {
+      if (!o.customer_name) return;
+      if (!custSpend[o.customer_email]) custSpend[o.customer_email] = {name:o.customer_name, spent:0, orders:0};
+      custSpend[o.customer_email].spent += Number(o.total_amount||0);
+      custSpend[o.customer_email].orders++;
+    });
+    const topCust = Object.values(custSpend).sort((a,b)=>b.spent-a.spent).slice(0,6);
+    const tcEl = document.getElementById('top-customers');
+    tcEl.innerHTML = topCust.length
+      ? topCust.map((c,i) => `<div class="top-item">
+          <div class="top-rank">${i+1}</div>
+          <div class="top-name">${c.name}</div>
+          <div class="top-units">${c.orders} order${c.orders!==1?'s':''}</div>
+          <div class="top-revenue">${fmtAmt(c.spent)}</div>
+        </div>`).join('')
+      : '<div class="empty-report">No customer data yet.</div>';
+  }
+
+  function exportReport() {
+    const rows = [['Report generated', new Date().toLocaleDateString()],[''],['Metric','Value'],
+      ['Total Orders',document.getElementById('r-orders').textContent],
+      ['Paid Orders',document.getElementById('r-paid').textContent],
+      ['Total Revenue',document.getElementById('r-revenue').textContent],
+      ['Average Order Value',document.getElementById('r-avg').textContent],
+    ];
+    const csv = rows.map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    a.download='sbs_report.csv'; a.click();
+  }
+
+  buildReports();
+</script>
+</body>
+</html>

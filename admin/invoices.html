@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoices — SBS Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../static/css/admin-shared.css">
+<style>
+  .summary-strip { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 24px; }
+  .summary-card { background: #fff; border: 1px solid #E8ECF0; border-radius: 12px; padding: 18px 20px; }
+  .summary-label { font-size: 12px; color: #8A93A0; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .summary-value { font-size: 24px; font-weight: 600; color: #1A1A2E; }
+  .summary-sub { font-size: 12px; color: #8A93A0; margin-top: 3px; }
+  .invoice-num { font-family: monospace; font-size: 12.5px; font-weight: 600; color: #1A1A2E; }
+  .resend-btn { font-size: 12px; color: var(--brand); background: none; border: none; cursor: pointer; font-family: var(--font); font-weight: 500; }
+  .resend-btn:hover { text-decoration: underline; }
+  /* Print invoice modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(10,20,30,0.5); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; border-radius: 14px; width: 560px; max-height: 88vh; overflow-y: auto; }
+  .modal-header { padding: 20px 24px 16px; border-bottom: 1px solid #F0F3F6; display: flex; align-items: center; justify-content: space-between; }
+  .modal-title { font-size: 15px; font-weight: 600; }
+  .modal-close { width: 30px; height: 30px; border-radius: 6px; border: 1px solid #E0E5EB; background: transparent; cursor: pointer; font-size: 18px; color: #7A8491; }
+  .modal-close:hover { background: #F4F6F8; }
+  .invoice-preview { padding: 24px; }
+  .inv-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+  .inv-company { font-size: 18px; font-weight: 600; color: #0D1B2A; margin-bottom: 4px; }
+  .inv-company-sub { font-size: 12px; color: #8A93A0; line-height: 1.6; }
+  .inv-label { font-size: 28px; font-weight: 700; color: var(--brand); letter-spacing: -0.5px; }
+  .inv-meta { font-size: 12px; color: #5A6473; text-align: right; line-height: 1.8; }
+  .inv-divider { border: none; border-top: 2px solid #0D1B2A; margin: 0 0 20px; }
+  .inv-bill { margin-bottom: 20px; }
+  .inv-bill-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #8A93A0; margin-bottom: 4px; }
+  .inv-bill-name { font-size: 14px; font-weight: 600; color: #1A1A2E; }
+  .inv-bill-sub { font-size: 12px; color: #5A6473; line-height: 1.6; }
+  .inv-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+  .inv-table th { background: #0D1B2A; color: #fff; padding: 8px 12px; font-size: 11px; text-align: left; text-transform: uppercase; letter-spacing: 0.06em; }
+  .inv-table th:last-child { text-align: right; }
+  .inv-table td { padding: 9px 12px; font-size: 12.5px; border-bottom: 1px solid #F0F3F6; }
+  .inv-table td:last-child { text-align: right; font-weight: 500; }
+  .inv-table tr:nth-child(even) td { background: #F8FAFB; }
+  .inv-totals { display: flex; justify-content: flex-end; }
+  .inv-totals-inner { width: 220px; }
+  .inv-total-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; }
+  .inv-total-row.grand { font-weight: 700; font-size: 15px; border-top: 2px solid #0D1B2A; padding-top: 8px; margin-top: 4px; color: #0D1B2A; }
+  .inv-footer { margin-top: 24px; text-align: center; font-size: 11px; color: #9AA3AF; border-top: 1px solid #F0F3F6; padding-top: 14px; }
+  .modal-footer { padding: 14px 24px 20px; border-top: 1px solid #F0F3F6; display: flex; justify-content: flex-end; gap: 10px; }
+
+  /* BULK ACTION BAR */
+  .bulk-bar { display:none; align-items:center; gap:10px; padding:10px 16px; background:#FEF9E7; border:1px solid #F5C518; border-radius:10px; margin-bottom:12px; }
+  .bulk-bar.visible { display:flex; }
+  .bulk-count { font-size:13px; font-weight:500; color:#1A1A2E; flex:1; }
+  .bulk-delete-btn { display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 14px; border-radius:7px; font-size:12.5px; font-weight:500; font-family:var(--font); cursor:pointer; background:#FEF0F0; color:#C0291F; border:1px solid #FBBCBC; transition:all 0.15s; }
+  .bulk-delete-btn:hover { background:#FDDCDC; }
+  .bulk-delete-btn svg { width:13px; height:13px; }
+  .bulk-clear-btn { display:inline-flex; align-items:center; height:32px; padding:0 12px; border-radius:7px; font-size:12.5px; font-family:var(--font); cursor:pointer; background:transparent; color:#5A6473; border:1px solid #E0E5EB; transition:all 0.15s; }
+  .bulk-clear-btn:hover { background:#F4F6F8; }
+  /* CHECKBOX */
+  .row-cb { width:16px; height:16px; accent-color:var(--brand); cursor:pointer; flex-shrink:0; }
+  .select-all-cb { width:16px; height:16px; accent-color:var(--brand); cursor:pointer; }
+
+</style>
+</head>
+<body>
+<div id="sidebar-mount"></div>
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">Invoices</div>
+    <div class="topbar-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Search invoice or customer..." oninput="renderTable()">
+    </div>
+    <button class="btn btn-ghost" onclick="exportCSV()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export
+    </button>
+  </div>
+  <div class="page">
+    <div class="summary-strip">
+      <div class="summary-card">
+        <div class="summary-label">Total invoiced</div>
+        <div class="summary-value" id="s-total">KES 0</div>
+        <div class="summary-sub" id="s-count">0 invoices</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Paid invoices</div>
+        <div class="summary-value" id="s-paid">0</div>
+        <div class="summary-sub">fully settled</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Unpaid / pending</div>
+        <div class="summary-value" id="s-unpaid" style="color:#C0291F;">0</div>
+        <div class="summary-sub" id="s-unpaid-amt">KES 0 outstanding</div>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <select class="filter-select" id="payFilter" onchange="renderTable()">
+        <option value="">All payments</option>
+        <option value="paid">Paid</option>
+        <option value="pending">Unpaid</option>
+      </select>
+      <select class="filter-select" id="sortFilter" onchange="renderTable()">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="highest">Highest amount</option>
+      </select>
+      <div class="filter-spacer"></div>
+      <span class="results-count" id="resultsCount">0 invoices</span>
+    </div>
+
+    <div class="bulk-bar" id="bulkBar">
+      <span class="bulk-count" id="bulkCount">0 selected</span>
+      <button class="bulk-delete-btn" onclick="bulkDelete()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+        Delete selected
+      </button>
+      <button class="bulk-clear-btn" onclick="clearSelection()">Deselect all</button>
+    </div>
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40px;"><input type="checkbox" class="select-all-cb" id="selectAll" onchange="toggleSelectAll(this)"></th>
+          <th style="width:170px;">Invoice no.</th>
+            <th>Customer</th>
+            <th style="width:120px;">Date</th>
+            <th style="width:140px;" class="t-right">Amount</th>
+            <th style="width:110px;">Payment</th>
+            <th style="width:130px;" class="t-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="invoicesBody"></tbody>
+      </table>
+      <div class="pagination" id="pagination" style="display:none;">
+        <span class="page-info" id="pageInfo"></span>
+        <div class="page-btns" id="pageBtns"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Invoice preview modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalInvNum">Invoice</span>
+      <button class="modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div class="invoice-preview" id="invoicePreview"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+      <button class="btn btn-dark" onclick="printInvoice()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Print / Save PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="../static/js/admin-sidebar.js"></script>
+<script>
+  renderSidebar('invoices');
+
+  let allOrders = JSON.parse(localStorage.getItem('sbs_orders') || '[]');
+  let currentPage = 1;
+  const perPage = 15;
+
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('en-KE', {day:'2-digit', month:'short', year:'numeric'});
+  }
+  function fmtAmt(n) { return 'KES ' + Number(n).toLocaleString('en-KE', {minimumFractionDigits:2}); }
+
+  // Summary stats
+  function updateSummary() {
+    const paid = allOrders.filter(o => o.payment_status === 'paid');
+    const unpaid = allOrders.filter(o => o.payment_status !== 'paid');
+    const totalAmt = allOrders.reduce((s,o) => s + Number(o.total_amount||0), 0);
+    const unpaidAmt = unpaid.reduce((s,o) => s + Number(o.total_amount||0), 0);
+    document.getElementById('s-total').textContent = fmtAmt(totalAmt);
+    document.getElementById('s-count').textContent = allOrders.length + ' invoices';
+    document.getElementById('s-paid').textContent = paid.length;
+    document.getElementById('s-unpaid').textContent = unpaid.length;
+    document.getElementById('s-unpaid-amt').textContent = fmtAmt(unpaidAmt) + ' outstanding';
+  }
+  updateSummary();
+
+  function getFiltered() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const payF = document.getElementById('payFilter').value;
+    const sort = document.getElementById('sortFilter').value;
+    let list = allOrders.filter(o => {
+      const ms = !search || (o.invoice_number||'').toLowerCase().includes(search) || (o.customer_name||'').toLowerCase().includes(search);
+      const mp = !payF || o.payment_status === payF;
+      return ms && mp;
+    });
+    if (sort === 'oldest') list.sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+    else if (sort === 'highest') list.sort((a,b) => b.total_amount - a.total_amount);
+    else list.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+    return list;
+  }
+
+  function renderTable() {
+    const filtered = getFiltered();
+    document.getElementById('resultsCount').textContent = filtered.length + ' invoice' + (filtered.length !== 1 ? 's' : '');
+    const total = Math.ceil(filtered.length / perPage);
+    if (currentPage > total) currentPage = Math.max(1, total);
+    const start = (currentPage - 1) * perPage;
+    const page = filtered.slice(start, start + perPage);
+    const tbody = document.getElementById('invoicesBody');
+    if (!page.length) {
+      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><p>${allOrders.length===0?'No orders yet. Invoices are generated automatically when a customer pays.':'No invoices match your search.'}</p></div></td></tr>`;
+      document.getElementById('pagination').style.display = 'none';
+      return;
+    }
+    const payBadge = s => {
+      const m = {paid:'badge-paid', pending:'badge-unpaid', failed:'badge-failed'};
+      return `<span class="badge ${m[s]||'badge-unpaid'}">${s==='paid'?'Paid':s==='failed'?'Failed':'Unpaid'}</span>`;
+    };
+    tbody.innerHTML = page.map(o => `<tr>
+      <td><input type="checkbox" class="row-cb" data-id="${o.id}" onchange="updateBulkBar()"></td>
+      <td><span class="invoice-num">${o.invoice_number||'—'}</span></td>
+      <td>
+        <div style="font-weight:500;font-size:13.5px;">${o.customer_name||'—'}</div>
+        <div style="font-size:11.5px;color:#9AA3AF;">${o.customer_email||''}</div>
+      </td>
+      <td style="font-size:12.5px;color:#5A6473;">${fmtDate(o.created_at)}</td>
+      <td class="t-right"><strong>${fmtAmt(o.total_amount||0)}</strong></td>
+      <td>${payBadge(o.payment_status)}</td>
+      <td class="t-right">
+        <div class="action-btns">
+          <button class="icon-btn" title="View invoice" onclick="viewInvoice('${o.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+          <button class="icon-btn" title="Print" onclick="viewInvoice('${o.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          </button>
+        </div>
+      </td>
+    </tr>`).join('');
+    const pagination = document.getElementById('pagination');
+    if (filtered.length > perPage) {
+      pagination.style.display = 'flex';
+      document.getElementById('pageInfo').textContent = `Showing ${start+1}–${Math.min(start+perPage,filtered.length)} of ${filtered.length}`;
+      let btns = '';
+      for (let i=1;i<=total;i++) btns += `<button class="page-btn ${i===currentPage?'active':''}" onclick="currentPage=${i};renderTable()">${i}</button>`;
+      document.getElementById('pageBtns').innerHTML = btns;
+    } else { pagination.style.display = 'none'; }
+  }
+
+  function viewInvoice(id) {
+    const o = allOrders.find(x => x.id === id);
+    if (!o) return;
+    document.getElementById('modalInvNum').textContent = o.invoice_number || 'Invoice';
+    const items = (o.order_items || []).map(i => `<tr>
+      <td>${i.product_name||'—'}</td>
+      <td style="text-align:center;">${i.quantity}</td>
+      <td style="text-align:right;">KES ${Number(i.unit_price||0).toLocaleString('en-KE',{minimumFractionDigits:2})}</td>
+      <td>KES ${Number(i.total_price||0).toLocaleString('en-KE',{minimumFractionDigits:2})}</td>
+    </tr>`).join('') || '<tr><td colspan="4" style="color:#9AA3AF;">No items</td></tr>';
+    document.getElementById('invoicePreview').innerHTML = `
+      <div class="inv-header">
+        <div>
+          <div class="inv-company">SBS Advertising Ltd</div>
+          <div class="inv-company-sub">Nairobi, Kenya<br>info@sbsadvertising.co.ke<br>+254 700 000 000</div>
+        </div>
+        <div>
+          <div class="inv-label">INVOICE</div>
+          <div class="inv-meta">
+            <strong>${o.invoice_number||'—'}</strong><br>
+            Date: ${fmtDate(o.created_at)}<br>
+            Payment: <strong style="color:${o.payment_status==='paid'?'#1A6B38':'#C0291F'}">${o.payment_status==='paid'?'PAID':'UNPAID'}</strong>
+          </div>
+        </div>
+      </div>
+      <hr class="inv-divider">
+      <div class="inv-bill">
+        <div class="inv-bill-label">Bill to</div>
+        <div class="inv-bill-name">${o.customer_name||'—'}</div>
+        <div class="inv-bill-sub">${o.customer_email||''}<br>${o.customer_phone||''}<br>${o.delivery_address||''}</div>
+      </div>
+      <table class="inv-table">
+        <thead><tr><th>Product</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Unit price</th><th style="text-align:right;">Total</th></tr></thead>
+        <tbody>${items}</tbody>
+      </table>
+      <div class="inv-totals">
+        <div class="inv-totals-inner">
+          <div class="inv-total-row"><span>Subtotal</span><span>KES ${Number(o.subtotal||0).toLocaleString('en-KE',{minimumFractionDigits:2})}</span></div>
+          <div class="inv-total-row"><span>VAT (16%)</span><span>KES ${Number(o.tax_amount||0).toLocaleString('en-KE',{minimumFractionDigits:2})}</span></div>
+          <div class="inv-total-row grand"><span>TOTAL</span><span>KES ${Number(o.total_amount||0).toLocaleString('en-KE',{minimumFractionDigits:2})}</span></div>
+        </div>
+      </div>
+      <div class="inv-footer">Thank you for your business! · SBS Advertising Ltd · info@sbsadvertising.co.ke</div>`;
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+
+  function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+  function printInvoice() { window.print(); }
+
+  function exportCSV() {
+    const f = getFiltered();
+    if (!f.length) return alert('Nothing to export.');
+    const rows = [['Invoice No','Customer','Email','Date','Amount','Payment']];
+    f.forEach(o => rows.push([o.invoice_number||'',o.customer_name||'',o.customer_email||'',fmtDate(o.created_at),o.total_amount||0,o.payment_status||'']));
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    a.download = 'sbs_invoices.csv'; a.click();
+  }
+
+  document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === document.getElementById('modalOverlay')) closeModal(); });
+  renderTable();
+
+  function getSelected() {
+    return [...document.querySelectorAll('.row-cb:checked')].map(cb => cb.dataset.id);
+  }
+  function updateBulkBar() {
+    const sel = getSelected();
+    document.getElementById('bulkBar').classList.toggle('visible', sel.length > 0);
+    document.getElementById('bulkCount').textContent = sel.length + ' invoice' + (sel.length !== 1 ? 's' : '') + ' selected';
+    const all = document.querySelectorAll('.row-cb');
+    const sa = document.getElementById('selectAll');
+    if (sa) sa.checked = all.length > 0 && sel.length === all.length;
+  }
+  function toggleSelectAll(cb) {
+    document.querySelectorAll('.row-cb').forEach(r => r.checked = cb.checked);
+    updateBulkBar();
+  }
+  function clearSelection() {
+    document.querySelectorAll('.row-cb').forEach(r => r.checked = false);
+    const sa = document.getElementById('selectAll');
+    if (sa) sa.checked = false;
+    updateBulkBar();
+  }
+  function bulkDelete() {
+    const ids = getSelected();
+    if (!ids.length) return;
+    if (!confirm(`Delete ${ids.length} selected order record${ids.length !== 1 ? 's' : ''}? This removes them from invoices and orders.`)) return;
+    allOrders = allOrders.filter(o => !ids.includes(o.id));
+    localStorage.setItem('sbs_orders', JSON.stringify(allOrders));
+    updateSummary();
+    clearSelection();
+    renderTable();
+  }
+
+</script>
+</body>
+</html>

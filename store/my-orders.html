@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Orders — SBS Advertising</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../static/css/store-shared.css">
+<style>
+  .page-wrap { max-width: 900px; margin: 0 auto; padding: 36px 40px; }
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+  .page-title { font-size: 24px; font-weight: 700; color: #1A1A2E; }
+  .page-sub { font-size: 14px; color: #8A93A0; margin-top: 2px; }
+  .orders-list { display: flex; flex-direction: column; gap: 16px; }
+  .order-card { background: #fff; border-radius: 14px; border: 1px solid #E8ECF0; overflow: hidden; transition: border-color 0.15s; }
+  .order-card:hover { border-color: var(--brand); }
+  .order-card-header { padding: 16px 22px; border-bottom: 1px solid #F0F3F6; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .order-inv { font-family: monospace; font-size: 13px; font-weight: 600; color: #1A1A2E; }
+  .order-date { font-size: 12.5px; color: #8A93A0; }
+  .order-spacer { flex: 1; }
+  .order-amount { font-size: 15px; font-weight: 700; color: #1A1A2E; }
+  .order-card-items { padding: 14px 22px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .item-thumb { width: 48px; height: 48px; border-radius: 8px; background: #F4F6F8; border: 1px solid #E8ECF0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; position: relative; }
+  .item-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .item-thumb svg { width: 22px; height: 22px; color: #C0C8D2; }
+  .item-thumb-qty { position: absolute; top: -4px; right: -4px; background: var(--navy); color: #fff; font-size: 10px; font-weight: 600; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .items-summary { flex: 1; font-size: 13px; color: #5A6473; }
+  .items-summary strong { color: #1A1A2E; }
+  .order-card-footer { padding: 12px 22px; border-top: 1px solid #F4F6F8; display: flex; align-items: center; gap: 12px; background: #FAFBFC; }
+  .view-order-btn { font-size: 13px; }
+  .empty-orders { text-align: center; padding: 80px 20px; background: #fff; border-radius: 14px; border: 1px solid #E8ECF0; }
+  .empty-orders svg { color: #C0C8D2; }
+  .empty-orders h3 { font-size: 18px; font-weight: 600; color: #1A1A2E; margin: 16px 0 8px; }
+  .empty-orders p { font-size: 14px; color: #8A93A0; margin-bottom: 24px; }
+  /* Order detail modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(10,20,30,0.5); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; border-radius: 16px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; }
+  .modal-header { padding: 20px 24px 16px; border-bottom: 1px solid #F0F3F6; display: flex; align-items: flex-start; justify-content: space-between; }
+  .modal-title { font-size: 16px; font-weight: 600; color: #1A1A2E; }
+  .modal-inv { font-size: 12px; color: #8A93A0; font-family: monospace; margin-top: 3px; }
+  .modal-close { width: 30px; height: 30px; border-radius: 6px; border: 1px solid #E0E5EB; background: transparent; cursor: pointer; font-size: 18px; color: #7A8491; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .modal-close:hover { background: #F4F6F8; }
+  .modal-body { padding: 20px 24px; }
+  .modal-section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #8A93A0; margin: 16px 0 8px; }
+  .modal-section-title:first-child { margin-top: 0; }
+  .detail-row { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid #F8FAFB; }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-key { color: #7A8491; }
+  .detail-val { font-weight: 500; color: #1A1A2E; }
+  .modal-items { }
+  .modal-item { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid #F4F6F8; }
+  .modal-item:last-child { border-bottom: none; }
+  .modal-item-name { flex: 1; font-size: 13px; color: #1A1A2E; }
+  .modal-item-qty { font-size: 12px; color: #8A93A0; }
+  .modal-item-price { font-size: 13px; font-weight: 600; color: #1A1A2E; }
+  .modal-totals { background: #F8FAFB; border-radius: 8px; padding: 12px 14px; margin-top: 12px; }
+  .total-row { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; color: #5A6473; }
+  .total-row.grand { font-weight: 700; font-size: 15px; color: #1A1A2E; border-top: 1px solid #E8ECF0; padding-top: 8px; margin-top: 4px; }
+  .modal-footer { padding: 14px 24px 20px; border-top: 1px solid #F0F3F6; display: flex; gap: 10px; justify-content: flex-end; }
+  /* Tracking steps */
+  .tracking { display: flex; align-items: flex-start; gap: 0; margin: 4px 0; }
+  .track-step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .track-dot { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; z-index: 1; }
+  .track-dot.done { background: var(--brand); color: #fff; }
+  .track-dot.active { background: var(--navy); color: #fff; }
+  .track-dot.inactive { background: #F0F3F6; color: #C0C8D2; }
+  .track-label { font-size: 11px; color: #8A93A0; text-align: center; }
+  .track-label.done, .track-label.active { color: #1A1A2E; font-weight: 500; }
+  .track-line { flex: 1; height: 2px; background: #E8ECF0; margin-top: 11px; }
+  .track-line.done { background: var(--brand); }
+</style>
+</head>
+<body>
+<nav class="nav" id="nav-mount"></nav>
+<div class="page-wrap">
+  <div class="page-header">
+    <div>
+      <div class="page-title">My orders</div>
+      <div class="page-sub" id="orders-sub">Your order history</div>
+    </div>
+    <a href="index.html" class="btn btn-outline btn-sm">Continue shopping</a>
+  </div>
+  <div id="orders-container"></div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-title" id="m-name"></div><div class="modal-inv" id="m-inv"></div></div>
+      <button class="modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section-title">Order tracking</div>
+      <div class="tracking" id="m-tracking"></div>
+      <div class="modal-section-title" style="margin-top:20px;">Delivery details</div>
+      <div class="detail-row"><span class="detail-key">Address</span><span class="detail-val" id="m-address"></span></div>
+      <div class="detail-row"><span class="detail-key">Phone</span><span class="detail-val" id="m-phone"></span></div>
+      <div class="detail-row"><span class="detail-key">Date placed</span><span class="detail-val" id="m-date"></span></div>
+      <div class="modal-section-title" style="margin-top:16px;">Items</div>
+      <div class="modal-items" id="m-items"></div>
+      <div class="modal-totals">
+        <div class="total-row"><span>Subtotal</span><span id="m-subtotal"></span></div>
+        <div class="total-row"><span>VAT (16%)</span><span id="m-tax"></span></div>
+        <div class="total-row grand"><span>Total</span><span id="m-total"></span></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<footer class="footer"><div id="footer-mount"></div></footer>
+<script src="../static/js/store-shared.js"></script>
+<script>
+  renderNav('orders');
+  renderFooter();
+  updateCartCount();
+
+  const session = getSession();
+  const allOrders = JSON.parse(localStorage.getItem('sbs_orders') || '[]');
+  const myOrders = session
+    ? allOrders.filter(o => o.customer_email === session.email)
+    : allOrders;
+
+  document.getElementById('orders-sub').textContent = session ? `Showing orders for ${session.email}` : 'All recent orders';
+
+  const statusSteps = ['pending','processing','shipped','delivered'];
+  const statusMap = { pending:'badge-pending', processing:'badge-processing', shipped:'badge-shipped', delivered:'badge-delivered', cancelled:'badge-danger' };
+
+  function renderOrders() {
+    const container = document.getElementById('orders-container');
+    if (!myOrders.length) {
+      container.innerHTML = `<div class="empty-orders">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        <h3>No orders yet</h3>
+        <p>You haven't placed any orders. Start shopping to see your order history here.</p>
+        <a href="index.html" class="btn btn-primary">Shop now</a>
+      </div>`; return;
+    }
+
+    const sorted = [...myOrders].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+    container.innerHTML = '<div class="orders-list">' + sorted.map(o => {
+      const items = o.order_items || [];
+      const thumbs = items.slice(0,4).map(i => `<div class="item-thumb"><svg viewBox="0 0 24 24" fill="none" stroke="#C0C8D2" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg><span class="item-thumb-qty">${i.quantity}</span></div>`).join('');
+      const itemNames = items.map(i=>i.product_name).join(', ');
+      return `<div class="order-card">
+        <div class="order-card-header">
+          <div><div class="order-inv">${o.invoice_number||'—'}</div><div class="order-date">${fmtDate(o.created_at)}</div></div>
+          <div class="order-spacer"></div>
+          <span class="badge ${statusMap[o.order_status]||'badge-pending'}">${(o.order_status||'pending').charAt(0).toUpperCase()+(o.order_status||'pending').slice(1)}</span>
+          <span class="badge ${o.payment_status==='paid'?'badge-success':'badge-warning'}">${o.payment_status==='paid'?'Paid':'Unpaid'}</span>
+          <div class="order-amount">${fmtAmt(o.total_amount||0)}</div>
+        </div>
+        <div class="order-card-items">
+          ${thumbs}
+          <div class="items-summary"><strong>${items.length} item${items.length!==1?'s':''}</strong> — ${itemNames.slice(0,80)}${itemNames.length>80?'...':''}</div>
+        </div>
+        <div class="order-card-footer">
+          <button class="btn btn-outline btn-sm view-order-btn" onclick="viewOrder('${o.id}')">View details</button>
+          <a href='order-confirmation.html?id=${o.id}' class="btn btn-ghost btn-sm">View receipt</a>
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+  }
+
+  function viewOrder(id) {
+    const o = myOrders.find(x => x.id === id);
+    if (!o) return;
+    document.getElementById('m-name').textContent = o.customer_name || '—';
+    document.getElementById('m-inv').textContent = o.invoice_number || '';
+    document.getElementById('m-address').textContent = o.delivery_address || '—';
+    document.getElementById('m-phone').textContent = o.customer_phone || '—';
+    document.getElementById('m-date').textContent = fmtDate(o.created_at);
+    document.getElementById('m-subtotal').textContent = fmtAmt(o.subtotal||0);
+    document.getElementById('m-tax').textContent = fmtAmt(o.tax_amount||0);
+    document.getElementById('m-total').textContent = fmtAmt(o.total_amount||0);
+
+    const currentStep = statusSteps.indexOf(o.order_status||'pending');
+    const trackHTML = statusSteps.map((s, i) => {
+      const isDone = i < currentStep;
+      const isActive = i === currentStep;
+      const cls = isDone?'done':isActive?'active':'inactive';
+      const icon = isDone?'✓':(i+1).toString();
+      return `${i>0?`<div class="track-line ${isDone?'done':''}"></div>`:''}
+        <div class="track-step"><div class="track-dot ${cls}">${icon}</div><div class="track-label ${cls}">${s.charAt(0).toUpperCase()+s.slice(1)}</div></div>`;
+    }).join('');
+    document.getElementById('m-tracking').innerHTML = trackHTML;
+
+    const items = o.order_items || [];
+    document.getElementById('m-items').innerHTML = items.map(i => `
+      <div class="modal-item">
+        <div style="flex:1;"><div class="modal-item-name">${i.product_name||'—'}</div><div class="modal-item-qty">x${i.quantity} @ ${fmtAmt(i.unit_price||0)}</div></div>
+        <div class="modal-item-price">${fmtAmt(i.total_price||0)}</div>
+      </div>`).join('') || '<p style="color:#9AA3AF;font-size:13px;">No items.</p>';
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+  function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+  document.getElementById('modalOverlay').addEventListener('click', e => { if(e.target===document.getElementById('modalOverlay')) closeModal(); });
+
+  renderOrders();
+</script>
+</body>
+</html>

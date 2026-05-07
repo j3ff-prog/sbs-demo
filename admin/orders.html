@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orders — SBS Admin</title>
+<link rel="stylesheet" href="../static/css/admin-shared.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --brand: #0A7E8C;
+    --brand-dark: #065F6B;
+    --brand-light: #E0F5F7;
+    --accent: #F5C518;
+    --sidebar-w: 230px;
+    --font: 'DM Sans', sans-serif;
+  }
+  body { font-family: var(--font); background: #F4F6F8; color: #1A1A2E; min-height: 100vh; display: flex; }
+
+  .sidebar { width: var(--sidebar-w); background: #0D1B2A; min-height: 100vh; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; z-index: 100; }
+  .sidebar-brand { padding: 20px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 12px; }
+  .brand-logo { width: 40px; height: 40px; background: var(--brand); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 600; color: #fff; font-size: 13px; flex-shrink: 0; }
+  .brand-name { font-size: 13px; font-weight: 600; color: #fff; }
+  .brand-sub { font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 1px; }
+  nav { flex: 1; padding: 16px 0; }
+  .nav-label { font-size: 10px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.12em; padding: 10px 20px 4px; }
+  .nav-link { display: flex; align-items: center; gap: 10px; padding: 9px 20px; color: rgba(255,255,255,0.55); font-size: 13.5px; text-decoration: none; border-right: 3px solid transparent; transition: all 0.15s; }
+  .nav-link:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.9); }
+  .nav-link.active { background: rgba(10,126,140,0.2); color: #fff; border-right-color: var(--brand); }
+  .nav-link svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.7; }
+  .nav-link.active svg { opacity: 1; }
+  .nav-badge { margin-left: auto; background: var(--accent); color: #1A1A2E; font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 20px; }
+  .sidebar-user { padding: 14px 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 10px; }
+  .user-avatar { width: 30px; height: 30px; background: var(--brand); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #fff; }
+  .user-name { font-size: 12px; font-weight: 500; color: #fff; }
+  .user-role { font-size: 10px; color: rgba(255,255,255,0.4); }
+
+  .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+  .topbar { height: 56px; background: #fff; border-bottom: 1px solid #E8ECF0; display: flex; align-items: center; padding: 0 28px; gap: 16px; position: sticky; top: 0; z-index: 50; }
+  .topbar-title { font-size: 17px; font-weight: 600; color: #1A1A2E; flex: 1; }
+  .topbar-search { display: flex; align-items: center; gap: 8px; background: #F4F6F8; border: 1px solid #E8ECF0; border-radius: 8px; padding: 0 12px; height: 36px; width: 260px; }
+  .topbar-search input { border: none; background: none; outline: none; font-size: 13px; font-family: var(--font); color: #1A1A2E; width: 100%; }
+  .topbar-search input::placeholder { color: #9AA3AF; }
+  .topbar-search svg { width: 15px; height: 15px; color: #9AA3AF; flex-shrink: 0; }
+  .btn { display: inline-flex; align-items: center; gap: 7px; padding: 0 16px; height: 36px; border-radius: 8px; font-size: 13px; font-weight: 500; font-family: var(--font); cursor: pointer; border: none; text-decoration: none; transition: all 0.15s; }
+  .btn-primary { background: var(--brand); color: #fff; }
+  .btn-primary:hover { background: var(--brand-dark); }
+  .btn-ghost { background: transparent; color: #5A6473; border: 1px solid #E0E5EB; }
+  .btn-ghost:hover { background: #F4F6F8; }
+  .btn svg { width: 15px; height: 15px; }
+
+  .page { padding: 28px; flex: 1; }
+
+  /* STAT TABS */
+  .stat-tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px; }
+  .stat-tab { background: #fff; border: 1px solid #E8ECF0; border-radius: 10px; padding: 14px 16px; cursor: pointer; transition: all 0.15s; }
+  .stat-tab:hover { border-color: var(--brand); }
+  .stat-tab.active { border-color: var(--brand); background: var(--brand-light); }
+  .stat-tab-label { font-size: 11px; color: #8A93A0; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .stat-tab-value { font-size: 22px; font-weight: 600; color: #1A1A2E; line-height: 1; }
+  .stat-tab.active .stat-tab-label { color: var(--brand-dark); }
+  .stat-tab.active .stat-tab-value { color: var(--brand-dark); }
+
+  /* FILTER BAR */
+  .filter-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .filter-select { height: 36px; border: 1px solid #E0E5EB; border-radius: 8px; padding: 0 12px; font-size: 13px; font-family: var(--font); background: #fff; color: #1A1A2E; cursor: pointer; outline: none; }
+  .filter-select:focus { border-color: var(--brand); }
+  .filter-spacer { flex: 1; }
+  .results-count { font-size: 13px; color: #8A93A0; }
+
+  /* TABLE */
+  .table-card { background: #fff; border-radius: 12px; border: 1px solid #E8ECF0; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  thead th { background: #F8FAFB; border-bottom: 1px solid #E8ECF0; padding: 11px 16px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: #7A8491; text-align: left; }
+  thead th:last-child { text-align: right; }
+  tbody tr { border-bottom: 1px solid #F0F3F6; transition: background 0.1s; cursor: pointer; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #F7FBFB; }
+  tbody td { padding: 13px 16px; font-size: 13.5px; color: #2C3440; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  tbody td:last-child { text-align: right; white-space: nowrap; }
+
+  .col-inv { width: 160px; }
+  .col-customer { width: auto; }
+  .col-date { width: 120px; }
+  .col-amount { width: 130px; }
+  .col-payment { width: 110px; }
+  .col-status { width: 130px; }
+  .col-actions { width: 100px; }
+
+  .customer-name { font-weight: 500; color: #1A1A2E; }
+  .customer-contact { font-size: 11.5px; color: #9AA3AF; margin-top: 1px; }
+  .invoice-num { font-size: 12.5px; font-weight: 500; color: #1A1A2E; font-family: monospace; }
+  .order-items-count { font-size: 11.5px; color: #9AA3AF; }
+
+  .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+  .badge-paid { background: #E4F5EC; color: #1A6B38; }
+  .badge-pending-pay { background: #FEF3E0; color: #9A6200; }
+  .badge-failed { background: #FEF0F0; color: #C0291F; }
+  .badge-order-pending { background: #F4F6F8; color: #5A6473; }
+  .badge-processing { background: #E8EEF8; color: #1B3A8A; }
+  .badge-shipped { background: #F0E8F8; color: #6A1B9A; }
+  .badge-delivered { background: #E4F5EC; color: #1A6B38; }
+  .badge-cancelled { background: #FEF0F0; color: #C0291F; }
+
+  .action-btns { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+  .icon-btn { width: 30px; height: 30px; border-radius: 6px; border: 1px solid #E0E5EB; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; color: #5A6473; }
+  .icon-btn svg { width: 14px; height: 14px; }
+  .icon-btn:hover { background: var(--brand-light); border-color: var(--brand); color: var(--brand); }
+
+  .pagination { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-top: 1px solid #F0F3F6; }
+  .page-info { font-size: 12.5px; color: #8A93A0; }
+  .page-btns { display: flex; gap: 4px; }
+  .page-btn { width: 30px; height: 30px; border-radius: 6px; border: 1px solid #E0E5EB; background: #fff; font-size: 12px; font-family: var(--font); cursor: pointer; display: flex; align-items: center; justify-content: center; color: #5A6473; transition: all 0.15s; }
+  .page-btn:hover { background: #F4F6F8; }
+  .page-btn.active { background: var(--brand); color: #fff; border-color: var(--brand); font-weight: 500; }
+
+  .empty-state { padding: 60px 20px; text-align: center; }
+  .empty-state p { font-size: 14px; color: #8A93A0; margin-top: 8px; }
+
+  /* ORDER DETAIL PANEL */
+  .detail-overlay { display: none; position: fixed; inset: 0; background: rgba(10,20,30,0.45); z-index: 200; justify-content: flex-end; }
+  .detail-overlay.open { display: flex; }
+  .detail-panel { width: 480px; background: #fff; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
+  .detail-header { padding: 20px 24px; border-bottom: 1px solid #F0F3F6; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: #fff; z-index: 10; }
+  .detail-title { font-size: 15px; font-weight: 600; color: #1A1A2E; }
+  .detail-invoice { font-size: 12px; color: #8A93A0; font-family: monospace; margin-top: 2px; }
+  .detail-close { width: 30px; height: 30px; border-radius: 6px; border: 1px solid #E0E5EB; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #7A8491; }
+  .detail-close:hover { background: #F4F6F8; }
+  .detail-body { padding: 20px 24px; flex: 1; }
+  .detail-section { margin-bottom: 24px; }
+  .detail-section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #8A93A0; margin-bottom: 10px; }
+  .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #F4F6F8; }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-key { font-size: 13px; color: #7A8491; }
+  .detail-val { font-size: 13px; font-weight: 500; color: #1A1A2E; text-align: right; max-width: 60%; }
+  .items-table { width: 100%; border-collapse: collapse; }
+  .items-table th { font-size: 11px; color: #8A93A0; text-align: left; padding: 6px 0; border-bottom: 1px solid #F0F3F6; text-transform: uppercase; letter-spacing: 0.06em; }
+  .items-table td { font-size: 13px; padding: 8px 0; border-bottom: 1px solid #F4F6F8; color: #2C3440; }
+  .items-table tr:last-child td { border-bottom: none; }
+  .items-table .t-right { text-align: right; }
+  .total-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
+  .total-row.grand { font-weight: 600; font-size: 15px; border-top: 1px solid #E8ECF0; padding-top: 10px; margin-top: 4px; }
+  .status-select { height: 34px; border: 1px solid #D8DDE4; border-radius: 8px; padding: 0 10px; font-size: 13px; font-family: var(--font); background: #fff; color: #1A1A2E; outline: none; width: 100%; margin-top: 6px; }
+  .status-select:focus { border-color: var(--brand); }
+  .detail-footer { padding: 16px 24px; border-top: 1px solid #F0F3F6; display: flex; gap: 10px; }
+  .btn-download { flex: 1; background: #0D1B2A; color: #fff; justify-content: center; }
+  .btn-download:hover { background: #1A2F45; }
+  .btn-update { flex: 1; background: var(--brand); color: #fff; justify-content: center; }
+  .btn-update:hover { background: var(--brand-dark); }
+
+  /* BULK ACTION BAR */
+  .bulk-bar { display:none; align-items:center; gap:10px; padding:10px 16px; background:#FEF9E7; border:1px solid #F5C518; border-radius:10px; margin-bottom:12px; }
+  .bulk-bar.visible { display:flex; }
+  .bulk-count { font-size:13px; font-weight:500; color:#1A1A2E; flex:1; }
+  .bulk-delete-btn { display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 14px; border-radius:7px; font-size:12.5px; font-weight:500; font-family:var(--font); cursor:pointer; background:#FEF0F0; color:#C0291F; border:1px solid #FBBCBC; transition:all 0.15s; }
+  .bulk-delete-btn:hover { background:#FDDCDC; }
+  .bulk-delete-btn svg { width:13px; height:13px; }
+  .bulk-clear-btn { display:inline-flex; align-items:center; height:32px; padding:0 12px; border-radius:7px; font-size:12.5px; font-family:var(--font); cursor:pointer; background:transparent; color:#5A6473; border:1px solid #E0E5EB; transition:all 0.15s; }
+  .bulk-clear-btn:hover { background:#F4F6F8; }
+  /* CHECKBOX */
+  .row-cb { width:16px; height:16px; accent-color:var(--brand); cursor:pointer; flex-shrink:0; }
+  .select-all-cb { width:16px; height:16px; accent-color:var(--brand); cursor:pointer; }
+
+</style>
+</head>
+<body>
+
+<div id="sidebar-mount"></div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">Orders</div>
+    <div class="topbar-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Search invoice, customer..." oninput="filterOrders()">
+    </div>
+    <button class="btn btn-ghost" onclick="exportCSV()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export
+    </button>
+  </div>
+
+  <div class="page">
+    <div class="stat-tabs">
+      <div class="stat-tab active" onclick="filterByStatus('all', this)">
+        <div class="stat-tab-label">All orders</div>
+        <div class="stat-tab-value" id="count-all">0</div>
+      </div>
+      <div class="stat-tab" onclick="filterByStatus('pending', this)">
+        <div class="stat-tab-label">Pending</div>
+        <div class="stat-tab-value" id="count-pending">0</div>
+      </div>
+      <div class="stat-tab" onclick="filterByStatus('processing', this)">
+        <div class="stat-tab-label">Processing</div>
+        <div class="stat-tab-value" id="count-processing">0</div>
+      </div>
+      <div class="stat-tab" onclick="filterByStatus('shipped', this)">
+        <div class="stat-tab-label">Shipped</div>
+        <div class="stat-tab-value" id="count-shipped">0</div>
+      </div>
+      <div class="stat-tab" onclick="filterByStatus('delivered', this)">
+        <div class="stat-tab-label">Delivered</div>
+        <div class="stat-tab-value" id="count-delivered">0</div>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <select class="filter-select" id="paymentFilter" onchange="filterOrders()">
+        <option value="">All payments</option>
+        <option value="paid">Paid</option>
+        <option value="pending">Unpaid</option>
+        <option value="failed">Failed</option>
+      </select>
+      <select class="filter-select" id="sortFilter" onchange="filterOrders()">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="highest">Highest amount</option>
+        <option value="lowest">Lowest amount</option>
+      </select>
+      <div class="filter-spacer"></div>
+      <span class="results-count" id="resultsCount">0 orders</span>
+    </div>
+
+    <div class="bulk-bar" id="bulkBar">
+      <span class="bulk-count" id="bulkCount">0 selected</span>
+      <button class="bulk-delete-btn" onclick="bulkDelete()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+        Delete selected
+      </button>
+      <button class="bulk-clear-btn" onclick="clearSelection()">Deselect all</button>
+    </div>
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40px;"><input type="checkbox" class="select-all-cb" id="selectAll" onchange="toggleSelectAll(this)"></th>
+            <th class="col-inv">Invoice no.</th>
+            <th class="col-customer">Customer</th>
+            <th class="col-date">Date</th>
+            <th class="col-amount">Amount</th>
+            <th class="col-payment">Payment</th>
+            <th class="col-status">Order status</th>
+            <th class="col-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="ordersBody"></tbody>
+      </table>
+      <div class="pagination" id="pagination" style="display:none;">
+        <span class="page-info" id="pageInfo"></span>
+        <div class="page-btns" id="pageBtns"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ORDER DETAIL SIDE PANEL -->
+<div class="detail-overlay" id="detailOverlay">
+  <div class="detail-panel">
+    <div class="detail-header">
+      <div>
+        <div class="detail-title" id="detailCustomer"></div>
+        <div class="detail-invoice" id="detailInvoice"></div>
+      </div>
+      <button class="detail-close" onclick="closeDetail()">&#x2715;</button>
+    </div>
+    <div class="detail-body">
+      <div class="detail-section">
+        <div class="detail-section-title">Customer details</div>
+        <div class="detail-row"><span class="detail-key">Name</span><span class="detail-val" id="d-name"></span></div>
+        <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val" id="d-email"></span></div>
+        <div class="detail-row"><span class="detail-key">Phone</span><span class="detail-val" id="d-phone"></span></div>
+        <div class="detail-row"><span class="detail-key">Delivery address</span><span class="detail-val" id="d-address"></span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Items ordered</div>
+        <table class="items-table">
+          <thead><tr><th>Product</th><th class="t-right">Qty</th><th class="t-right">Price</th></tr></thead>
+          <tbody id="d-items"></tbody>
+        </table>
+        <div style="margin-top:12px;">
+          <div class="total-row"><span style="color:#7A8491;">Subtotal</span><span id="d-subtotal"></span></div>
+          <div class="total-row"><span style="color:#7A8491;">VAT (16%)</span><span id="d-tax"></span></div>
+          <div class="total-row grand"><span>Total</span><span id="d-total"></span></div>
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Payment</div>
+        <div class="detail-row"><span class="detail-key">Status</span><span class="detail-val" id="d-payment-status"></span></div>
+        <div class="detail-row"><span class="detail-key">Reference</span><span class="detail-val" id="d-ref" style="font-family:monospace;font-size:12px;"></span></div>
+        <div class="detail-row"><span class="detail-key">Date</span><span class="detail-val" id="d-date"></span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Update order status</div>
+        <select class="status-select" id="d-status-select">
+          <option value="pending">Pending</option>
+          <option value="processing">Processing</option>
+          <option value="shipped">Shipped</option>
+          <option value="delivered">Delivered</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+    </div>
+    <div class="detail-footer">
+      <button class="btn btn-download" onclick="downloadInvoice()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download invoice
+      </button>
+      <button class="btn btn-update" onclick="updateStatus()">Save status</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let orders = JSON.parse(localStorage.getItem('sbs_orders') || '[]');
+  let activeStatus = 'all';
+  let currentPage = 1;
+  let activeOrderId = null;
+  const perPage = 10;
+
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-KE', { day:'2-digit', month:'short', year:'numeric' });
+  }
+  function fmtAmt(n) {
+    return 'KES ' + Number(n).toLocaleString('en-KE', { minimumFractionDigits: 2 });
+  }
+  function payBadge(s) {
+    const map = { paid: 'badge-paid', pending: 'badge-pending-pay', failed: 'badge-failed' };
+    return `<span class="badge ${map[s] || 'badge-pending-pay'}">${s === 'paid' ? 'Paid' : s === 'failed' ? 'Failed' : 'Unpaid'}</span>`;
+  }
+  function statusBadge(s) {
+    const map = { pending:'badge-order-pending', processing:'badge-processing', shipped:'badge-shipped', delivered:'badge-delivered', cancelled:'badge-cancelled' };
+    const label = s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Pending';
+    return `<span class="badge ${map[s] || 'badge-order-pending'}">${label}</span>`;
+  }
+
+  function updateCounts() {
+    const statuses = ['pending','processing','shipped','delivered'];
+    document.getElementById('count-all').textContent = orders.length;
+    statuses.forEach(s => {
+      const el = document.getElementById('count-' + s);
+      if (el) el.textContent = orders.filter(o => o.order_status === s).length;
+    });
+    const pending = orders.filter(o => o.order_status === 'pending').length;
+    document.getElementById('pendingBadge').textContent = pending;
+  }
+
+  function getFiltered() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const payF = document.getElementById('paymentFilter').value;
+    const sort = document.getElementById('sortFilter').value;
+
+    let list = orders.filter(o => {
+      const matchStatus = activeStatus === 'all' || o.order_status === activeStatus;
+      const matchPay = !payF || o.payment_status === payF;
+      const matchSearch = !search ||
+        (o.invoice_number||'').toLowerCase().includes(search) ||
+        (o.customer_name||'').toLowerCase().includes(search) ||
+        (o.customer_email||'').toLowerCase().includes(search) ||
+        (o.customer_phone||'').toLowerCase().includes(search);
+      return matchStatus && matchPay && matchSearch;
+    });
+
+    if (sort === 'oldest') list.sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+    else if (sort === 'highest') list.sort((a,b) => b.total_amount - a.total_amount);
+    else if (sort === 'lowest') list.sort((a,b) => a.total_amount - b.total_amount);
+    else list.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+
+    return list;
+  }
+
+  function renderTable() {
+    updateCounts();
+    const filtered = getFiltered();
+    document.getElementById('resultsCount').textContent = filtered.length + ' order' + (filtered.length !== 1 ? 's' : '');
+
+    const totalPages = Math.ceil(filtered.length / perPage);
+    if (currentPage > totalPages) currentPage = Math.max(1, totalPages);
+    const start = (currentPage - 1) * perPage;
+    const page = filtered.slice(start, start + perPage);
+
+    const tbody = document.getElementById('ordersBody');
+    if (page.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#C0C8D2" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        <p>${orders.length === 0 ? 'No orders yet. Orders will appear here once customers checkout.' : 'No orders match your filters.'}</p>
+      </div></td></tr>`;
+      document.getElementById('pagination').style.display = 'none';
+      return;
+    }
+
+    tbody.innerHTML = page.map(o => {
+      const itemCount = (o.order_items||[]).length;
+      return `<tr>
+        <td><input type="checkbox" class="row-cb" data-id="${o.id}" onchange="updateBulkBar()"></td>
+        <td><span class="invoice-num">${o.invoice_number || '—'}</span></td>
+        <td>
+          <div class="customer-name">${o.customer_name || '—'}</div>
+          <div class="customer-contact">${o.customer_email || ''} ${o.customer_phone ? '· ' + o.customer_phone : ''}</div>
+        </td>
+        <td style="font-size:12.5px;color:#5A6473;">${fmtDate(o.created_at)}</td>
+        <td><strong>${fmtAmt(o.total_amount || 0)}</strong><div style="font-size:11px;color:#9AA3AF;">${itemCount} item${itemCount!==1?'s':''}</div></td>
+        <td>${payBadge(o.payment_status)}</td>
+        <td>${statusBadge(o.order_status)}</td>
+        <td><div class="action-btns" onclick="event.stopPropagation()">
+          <button class="icon-btn" title="View order" onclick="openDetail('${o.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+          <button class="icon-btn" title="Download invoice" onclick="downloadOrderInvoice('${o.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </button>
+        </div></td>
+      </tr>`;
+    }).join('');
+
+    const pagination = document.getElementById('pagination');
+    if (filtered.length > perPage) {
+      pagination.style.display = 'flex';
+      document.getElementById('pageInfo').textContent = `Showing ${start+1}–${Math.min(start+perPage, filtered.length)} of ${filtered.length}`;
+      let btns = '';
+      for (let i = 1; i <= totalPages; i++) {
+        btns += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+      }
+      document.getElementById('pageBtns').innerHTML = btns;
+    } else {
+      pagination.style.display = 'none';
+    }
+  }
+
+  function filterByStatus(status, el) {
+    activeStatus = status;
+    document.querySelectorAll('.stat-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    currentPage = 1;
+    renderTable();
+  }
+  function filterOrders() { currentPage = 1; renderTable(); }
+  function goPage(n) { currentPage = n; renderTable(); }
+
+  function openDetail(id) {
+    const o = orders.find(x => x.id === id);
+    if (!o) return;
+    activeOrderId = id;
+    document.getElementById('detailCustomer').textContent = o.customer_name || '—';
+    document.getElementById('detailInvoice').textContent = o.invoice_number || '';
+    document.getElementById('d-name').textContent = o.customer_name || '—';
+    document.getElementById('d-email').textContent = o.customer_email || '—';
+    document.getElementById('d-phone').textContent = o.customer_phone || '—';
+    document.getElementById('d-address').textContent = o.delivery_address || '—';
+    document.getElementById('d-subtotal').textContent = fmtAmt(o.subtotal || 0);
+    document.getElementById('d-tax').textContent = fmtAmt(o.tax_amount || 0);
+    document.getElementById('d-total').textContent = fmtAmt(o.total_amount || 0);
+    document.getElementById('d-payment-status').innerHTML = payBadge(o.payment_status);
+    document.getElementById('d-ref').textContent = o.paystack_reference || '—';
+    document.getElementById('d-date').textContent = fmtDate(o.created_at);
+    document.getElementById('d-status-select').value = o.order_status || 'pending';
+
+    const items = o.order_items || [];
+    document.getElementById('d-items').innerHTML = items.length
+      ? items.map(i => `<tr>
+          <td>${i.product_name || '—'}</td>
+          <td class="t-right">${i.quantity}</td>
+          <td class="t-right">${fmtAmt(i.total_price || 0)}</td>
+        </tr>`).join('')
+      : `<tr><td colspan="3" style="color:#9AA3AF;font-size:12px;padding:8px 0;">No items recorded</td></tr>`;
+
+    document.getElementById('detailOverlay').classList.add('open');
+  }
+
+  function closeDetail() {
+    document.getElementById('detailOverlay').classList.remove('open');
+    activeOrderId = null;
+  }
+
+  function updateStatus() {
+    if (!activeOrderId) return;
+    const newStatus = document.getElementById('d-status-select').value;
+    const idx = orders.findIndex(o => o.id === activeOrderId);
+    if (idx > -1) {
+      orders[idx].order_status = newStatus;
+      localStorage.setItem('sbs_orders', JSON.stringify(orders));
+      renderTable();
+      openDetail(activeOrderId);
+    }
+  }
+
+  function downloadOrderInvoice(id) {
+    alert('Invoice download will work once connected to the backend.');
+  }
+  function downloadInvoice() { downloadOrderInvoice(activeOrderId); }
+
+  function exportCSV() {
+    const filtered = getFiltered();
+    if (!filtered.length) return alert('No orders to export.');
+    const rows = [['Invoice No','Customer','Email','Phone','Date','Amount','Payment','Status']];
+    filtered.forEach(o => rows.push([
+      o.invoice_number||'', o.customer_name||'', o.customer_email||'',
+      o.customer_phone||'', fmtDate(o.created_at),
+      o.total_amount||0, o.payment_status||'', o.order_status||''
+    ]));
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'sbs_orders.csv';
+    a.click();
+  }
+
+  document.getElementById('detailOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeDetail();
+  });
+
+  renderTable();
+</script>
+<script src="../static/js/admin-sidebar.js"></script>
+<script>
+  renderSidebar('orders');
+
+  function getSelected() {
+    return [...document.querySelectorAll('.row-cb:checked')].map(cb => cb.dataset.id);
+  }
+  function updateBulkBar() {
+    const sel = getSelected();
+    const bar = document.getElementById('bulkBar');
+    const count = document.getElementById('bulkCount');
+    bar.classList.toggle('visible', sel.length > 0);
+    count.textContent = sel.length + ' order' + (sel.length !== 1 ? 's' : '') + ' selected';
+    const all = document.querySelectorAll('.row-cb');
+    const selAll = document.getElementById('selectAll');
+    if (selAll) selAll.checked = all.length > 0 && sel.length === all.length;
+  }
+  function toggleSelectAll(cb) {
+    document.querySelectorAll('.row-cb').forEach(r => r.checked = cb.checked);
+    updateBulkBar();
+  }
+  function clearSelection() {
+    document.querySelectorAll('.row-cb').forEach(r => r.checked = false);
+    const sa = document.getElementById('selectAll');
+    if (sa) sa.checked = false;
+    updateBulkBar();
+  }
+  function bulkDelete() {
+    const ids = getSelected();
+    if (!ids.length) return;
+    if (!confirm(`Delete ${ids.length} selected order${ids.length !== 1 ? 's' : ''}? This cannot be undone.`)) return;
+    orders = orders.filter(o => !ids.includes(o.id));
+    localStorage.setItem('sbs_orders', JSON.stringify(orders));
+    clearSelection();
+    renderTable();
+  }
+
+</script>
+</body>
+</html>

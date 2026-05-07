@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login — SBS Advertising</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../static/css/store-shared.css">
+<style>
+  .auth-page { min-height: calc(100vh - 64px); display: flex; align-items: center; justify-content: center; padding: 40px 20px; background: #F4F6F8; }
+  .auth-card { background: #fff; border-radius: 16px; border: 1px solid #E8ECF0; padding: 40px; width: 100%; max-width: 420px; }
+  .auth-logo { text-align: center; margin-bottom: 28px; }
+  .auth-logo-box { width: 48px; height: 48px; background: var(--brand); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: #fff; margin: 0 auto 12px; }
+  .auth-title { font-size: 22px; font-weight: 700; color: #1A1A2E; margin-bottom: 4px; }
+  .auth-sub { font-size: 13.5px; color: #8A93A0; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 500; color: #4A5260; margin-bottom: 6px; }
+  .form-group input { width: 100%; height: 42px; border: 1px solid #D8DDE4; border-radius: 8px; padding: 0 14px; font-size: 14px; font-family: var(--font); color: #1A1A2E; outline: none; transition: border-color 0.15s; }
+  .form-group input:focus { border-color: var(--brand); }
+  .submit-btn { width: 100%; height: 44px; justify-content: center; font-size: 15px; margin-top: 8px; }
+  .auth-switch { text-align: center; margin-top: 20px; font-size: 13.5px; color: #7A8491; }
+  .auth-switch a { color: var(--brand); font-weight: 500; }
+  .auth-switch a:hover { text-decoration: underline; }
+  .error-msg { background: #FEF0F0; border: 1px solid #FBBCBC; color: #C0291F; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; display: none; }
+  .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: #C0C8D2; font-size: 12px; }
+  .divider::before, .divider::after { content:''; flex:1; height:1px; background:#E8ECF0; }
+  .guest-btn { width:100%; height:40px; justify-content:center; font-size:13.5px; }
+</style>
+</head>
+<body>
+<nav class="nav" id="nav-mount"></nav>
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-box">SBS</div>
+      <div class="auth-title">Welcome back</div>
+      <div class="auth-sub">Log in to your Steadfast account</div>
+    </div>
+    <div class="error-msg" id="error-msg">Invalid email or password.</div>
+    <div class="form-group">
+      <label>Email address</label>
+      <input type="email" id="f-email" placeholder="your@email.com" onkeydown="if(event.key==='Enter')login()">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="f-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
+    </div>
+    <button class="btn btn-primary submit-btn" onclick="login()">Log in</button>
+    <div class="divider">or</div>
+    <button class="btn btn-ghost guest-btn" onclick="location.href='checkout.html'">Continue as guest</button>
+    <div class="auth-switch">Don't have an account? <a href="register.html">Create one</a></div>
+  </div>
+</div>
+<footer class="footer"><div id="footer-mount"></div></footer>
+<script src="../static/js/store-shared.js"></script>
+<script>
+  renderNav('home');
+  renderFooter();
+  if (isLoggedIn()) location.href = 'index.html';
+
+  function login() {
+    const email = document.getElementById('f-email').value.trim();
+    const password = document.getElementById('f-password').value;
+    const customers = JSON.parse(localStorage.getItem('sbs_customers') || '[]');
+    // Simple password check (in production Flask handles this with bcrypt)
+    const customer = customers.find(c => c.email === email);
+    if (customer && (password === customer.password || !customer.password)) {
+      setSession({ id: customer.id, full_name: customer.full_name, email: customer.email, phone: customer.phone });
+      const redirect = new URLSearchParams(location.search).get('next') || 'index.html';
+      location.href = redirect;
+    } else {
+      document.getElementById('error-msg').style.display = 'block';
+    }
+  }
+</script>
+</body>
+</html>
