@@ -35,6 +35,14 @@
   .steps { display: flex; flex-direction: column; gap: 8px; }
   .step { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.5; }
   .step-num { width: 20px; height: 20px; border-radius: 50%; background: #0A7E8C; color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+
+  @media (max-width: 540px) {
+    body { padding: 24px 16px; }
+    .cards { grid-template-columns: 1fr; max-width: 320px; }
+    .logo-wrap { flex-direction: column; }
+    .note { padding: 14px 16px; }
+  }
+
 </style>
 </head>
 <body>

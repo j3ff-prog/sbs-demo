@@ -50,12 +50,37 @@
   .row-cb { width:16px; height:16px; accent-color:var(--brand); cursor:pointer; flex-shrink:0; }
   .select-all-cb { width:16px; height:16px; accent-color:var(--brand); cursor:pointer; }
 
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 1024px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .bottom-grid { grid-template-columns: 1fr; }
+    .form-grid, .grid-2, .grid-3 { grid-template-columns: 1fr !important; }
+    .grid-cols-2 { grid-template-columns: 1fr !important; }
+  }
+  @media (max-width: 768px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .quick-actions { grid-template-columns: repeat(2, 1fr); }
+    .filter-bar .filter-spacer { display: none; }
+    .filter-bar .results-count { order: 10; width: 100%; }
+    [style*="grid-template-columns: repeat(4"] { grid-template-columns: repeat(2, 1fr) !important; }
+    [style*="grid-template-columns: 1fr 1fr 1fr"] { grid-template-columns: 1fr 1fr !important; }
+  }
+  @media (max-width: 480px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stat-value { font-size: 20px; }
+    .quick-actions { grid-template-columns: repeat(2, 1fr); }
+  }
+
 </style>
 </head>
 <body>
 <div id="sidebar-mount"></div>
 <div class="main">
   <div class="topbar">
+    <button class="menu-toggle" id="menuToggle" aria-label="Open menu">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
     <div class="topbar-title">Customers</div>
     <div class="topbar-search">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -105,7 +130,7 @@
       <button class="bulk-clear-btn" onclick="clearSelection()">Deselect all</button>
     </div>
     <div class="table-card">
-      <table>
+      <div class="table-responsive"><table>
         <thead>
           <tr>
             <th style="width:40px;"><input type="checkbox" class="select-all-cb" id="selectAll" onchange="toggleSelectAll(this)"></th>
@@ -118,7 +143,7 @@
           </tr>
         </thead>
         <tbody id="customersBody"></tbody>
-      </table>
+      </table></div>
       <div class="pagination" id="pagination" style="display:none;">
         <span class="page-info" id="pageInfo"></span>
         <div class="page-btns" id="pageBtns"></div>

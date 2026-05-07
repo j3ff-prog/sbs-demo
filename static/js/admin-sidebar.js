@@ -1,4 +1,3 @@
-// Inject sidebar into any admin page
 function renderSidebar(activePage) {
   const links = [
     { id: 'dashboard', href: 'dashboard.html', label: 'Dashboard', icon: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>', group: 'Main' },
@@ -37,7 +36,11 @@ function renderSidebar(activePage) {
   });
 
   const html = `
-    <aside class="sidebar">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="sidebar" id="adminSidebar">
+      <button class="sidebar-close" id="sidebarClose" aria-label="Close menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
       <div class="sidebar-brand">
         ${brandLogoEl}
         <div>
@@ -55,4 +58,17 @@ function renderSidebar(activePage) {
       </div>
     </aside>`;
   document.getElementById('sidebar-mount').innerHTML = html;
+
+  // Wire up mobile sidebar toggle
+  const sidebar = document.getElementById('adminSidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const closeBtn = document.getElementById('sidebarClose');
+  const toggle = document.getElementById('menuToggle');
+
+  function openSidebar() { sidebar.classList.add('open'); overlay.classList.add('open'); }
+  function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('open'); }
+
+  if (toggle) toggle.addEventListener('click', openSidebar);
+  if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+  if (overlay) overlay.addEventListener('click', closeSidebar);
 }

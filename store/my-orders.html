@@ -69,6 +69,14 @@
   .track-label.done, .track-label.active { color: #1A1A2E; font-weight: 500; }
   .track-line { flex: 1; height: 2px; background: #E8ECF0; margin-top: 11px; }
   .track-line.done { background: var(--brand); }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 768px) {
+    .orders-layout, .container > div[style*="grid"] { grid-template-columns: 1fr !important; }
+    .container { padding: 0 16px; }
+    .orders-table-wrap { overflow-x: auto; }
+  }
+
 </style>
 </head>
 <body>

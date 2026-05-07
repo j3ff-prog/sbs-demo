@@ -49,6 +49,15 @@
   .promo-row input:focus { border-color: var(--brand); }
   .payment-icons { display: flex; align-items: center; gap: 8px; margin-top: 14px; justify-content: center; }
   .payment-icon { height: 24px; padding: 3px 8px; background: #F8FAFB; border: 1px solid #E8ECF0; border-radius: 4px; font-size: 10px; font-weight: 600; color: #5A6473; display: flex; align-items: center; }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 768px) {
+    .cart-layout { flex-direction: column !important; grid-template-columns: 1fr !important; }
+    .cart-main { min-width: 0; }
+    .container { padding: 0 16px; }
+    .cart-item { flex-wrap: wrap; gap: 10px; }
+  }
+
 </style>
 </head>
 <body>
